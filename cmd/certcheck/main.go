@@ -92,10 +92,10 @@ func getParts(input string) (domain string, port string, err error) {
 }
 
 type args struct {
-	Domains    []string `arg:"-d" help:"list of domains to check with ports"`
+	Domains    []string `arg:"-d" help:"domain:port list to check"`
 	WarnAtDays int      `arg:"-w" default:"30" help:"warn if expiry before days"`
 	YAML       bool     `arg:"-y" help:"display output as YAML"`
-	JSON       bool     `arg:"-j" help:"display output as JSON"`
+	JSON       bool     `arg:"-j" help:"display output as JSON (default)"`
 }
 
 func main() {
