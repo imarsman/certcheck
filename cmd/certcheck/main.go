@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"net"
 	"os"
 	"regexp"
 	"strings"
@@ -22,36 +23,40 @@ type certValsSet struct {
 // CertVals values for TLS certificate
 type CertVals struct {
 	ExpiryWarning bool   `json:"expirywarning" yaml:"expirywarning"`
-	DomainError   bool   `json:"domainerror" yaml:"domainerror"`
+	HostError     bool   `json:"hosterror" yaml:"hosterror"`
 	Message       string `json:"message" yaml:"message"`
-	Domain        string `json:"domain" yaml:"domain"`
+	Host          string `json:"host" yaml:"host"`
 	Port          string `json:"port" yaml:"port"`
 	WarnAtDays    int    `json:"warnatdays" yaml:"warnatdays"`
 	NotBefore     string `json:"notbefore" yaml:"notbefore"`
 	NotAfter      string `json:"notafter" yaml:"notafter"`
 }
 
-func getCertVals(domain, port string, warnAtDays int) CertVals {
+func getCertVals(host, port string, warnAtDays int, timeout int) CertVals {
 	certVals := CertVals{}
-	certVals.Domain = domain
+	certVals.Host = host
 	certVals.Port = port
-	certVals.DomainError = false
+	certVals.HostError = false
 	certVals.WarnAtDays = warnAtDays
+	hostAndPort := host + ":" + port
 
 	warnIf := warnAtDays * 24 * int(time.Hour)
 
-	conn, err := tls.Dial("tcp", fmt.Sprintf("%s:%s", domain, port), nil)
+	conn, err := tls.DialWithDialer(
+		&net.Dialer{Timeout: time.Duration(timeout) * time.Second},
+		"tcp",
+		hostAndPort, nil)
 	if err != nil {
-		certVals.Message = fmt.Sprintf("Server doesn't support SSL certificate err: %s" + err.Error())
+		certVals.Message = fmt.Sprintf("Server doesn't support TLS certificate err: %s" + err.Error())
 		return certVals
 	}
 
-	err = conn.VerifyHostname(domain)
+	err = conn.VerifyHostname(host)
 	if err != nil {
 		certVals.Message = fmt.Sprintf("Hostname doesn't match with certificate: %s" + err.Error())
 		return certVals
 	}
-	certVals.DomainError = false
+	certVals.HostError = false
 
 	notBefore := conn.ConnectionState().PeerCertificates[0].NotBefore
 	certVals.NotBefore = notBefore.Format(time.RFC3339)
@@ -66,20 +71,20 @@ func getCertVals(domain, port string, warnAtDays int) CertVals {
 	return certVals
 }
 
-func getParts(input string) (domain string, port string, err error) {
+func getParts(input string) (host string, port string, err error) {
 	if strings.Contains(input, ":") {
 		parts := strings.Split(input, ":")
 		if len(parts) == 1 {
-			domain = parts[0]
+			host = parts[0]
 			port = "443"
 		} else {
 			if len(parts) == 2 {
-				domain = parts[0]
+				host = parts[0]
 				port = parts[1]
 			}
 		}
 	} else {
-		domain = input
+		host = input
 		port = "443"
 	}
 	var matched bool
@@ -95,7 +100,8 @@ func getParts(input string) (domain string, port string, err error) {
 }
 
 type args struct {
-	Domains    []string `arg:"-d" help:"domain:port list to check"`
+	Hosts      []string `arg:"-d" help:"host:port list to check"`
+	Timeout    int      `arg:"-t" default:"10" help:"connection timeout seconds"`
 	WarnAtDays int      `arg:"-w" default:"30" help:"warn if expiry before days"`
 	YAML       bool     `arg:"-y" help:"display output as YAML"`
 	JSON       bool     `arg:"-j" help:"display output as JSON (default)"`
@@ -122,21 +128,21 @@ func main() {
 		scanner.Split(bufio.ScanLines)
 
 		for scanner.Scan() {
-			domain, port, err := getParts(scanner.Text())
+			host, port, err := getParts(scanner.Text())
 			if err != nil {
 				continue
 			}
-			certVals := getCertVals(domain, port, warnAtDays)
+			certVals := getCertVals(host, port, warnAtDays, args.Timeout)
 			cvs.vals = append(cvs.vals, certVals)
 		}
 	} else {
-		for _, domain := range args.Domains {
-			domain, port, err := getParts(domain)
+		for _, host := range args.Hosts {
+			host, port, err := getParts(host)
 			if err != nil {
 				continue
 			}
 
-			certVals := getCertVals(domain, port, warnAtDays)
+			certVals := getCertVals(host, port, warnAtDays, args.Timeout)
 			cvs.vals = append(cvs.vals, certVals)
 		}
 	}
@@ -157,5 +163,5 @@ func main() {
 		return
 	}
 
-	fmt.Fprintln(os.Stderr, "No valid domains found")
+	fmt.Fprintln(os.Stderr, "No valid hosts found")
 }
