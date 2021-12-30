@@ -21,13 +21,13 @@ type certValsSet struct {
 
 // CertVals values for TLS certificate
 type CertVals struct {
-	Expired     bool   `json:"expired" yaml:"expired"`
-	DomainError bool   `json:"domainerror" yaml:"domainerror"`
-	Message     string `json:"message" yaml:"message"`
-	Domain      string `json:"domain" yaml:"domain"`
-	Port        string `json:"port" yaml:"port"`
-	NotAfter    string `json:"notafter" yaml:"notafter"`
-	NotBefore   string `json:"notbefore" yaml:"notbefore"`
+	ExpiryWarning bool   `json:"expirywarning" yaml:"expirywarning"`
+	DomainError   bool   `json:"domainerror" yaml:"domainerror"`
+	Message       string `json:"message" yaml:"message"`
+	Domain        string `json:"domain" yaml:"domain"`
+	Port          string `json:"port" yaml:"port"`
+	NotBefore     string `json:"notbefore" yaml:"notbefore"`
+	NotAfter      string `json:"notafter" yaml:"notafter"`
 }
 
 func getCertVals(domain, port string, warnAtDays int) CertVals {
@@ -35,6 +35,7 @@ func getCertVals(domain, port string, warnAtDays int) CertVals {
 	certVals.Domain = domain
 	certVals.Port = port
 	certVals.DomainError = false
+	warnIf := warnAtDays * 24 * int(time.Hour)
 
 	conn, err := tls.Dial("tcp", fmt.Sprintf("%s:%s", domain, port), nil)
 	if err != nil {
@@ -55,7 +56,9 @@ func getCertVals(domain, port string, warnAtDays int) CertVals {
 	notAfter := conn.ConnectionState().PeerCertificates[0].NotAfter
 	certVals.NotAfter = notAfter.Format(time.RFC3339)
 	certVals.Message = "OK"
-	certVals.Expired = false // Fix this
+
+	expired := (time.Now().Add(time.Duration(warnIf)).UnixNano() > notAfter.UnixNano())
+	certVals.ExpiryWarning = expired // Fix this
 
 	return certVals
 }
