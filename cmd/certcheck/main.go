@@ -26,6 +26,7 @@ type CertVals struct {
 	Message       string `json:"message" yaml:"message"`
 	Domain        string `json:"domain" yaml:"domain"`
 	Port          string `json:"port" yaml:"port"`
+	WarnAtDays    int    `json:"warnatdays" yaml:"warnatdays"`
 	NotBefore     string `json:"notbefore" yaml:"notbefore"`
 	NotAfter      string `json:"notafter" yaml:"notafter"`
 }
@@ -35,6 +36,8 @@ func getCertVals(domain, port string, warnAtDays int) CertVals {
 	certVals.Domain = domain
 	certVals.Port = port
 	certVals.DomainError = false
+	certVals.WarnAtDays = warnAtDays
+
 	warnIf := warnAtDays * 24 * int(time.Hour)
 
 	conn, err := tls.Dial("tcp", fmt.Sprintf("%s:%s", domain, port), nil)
@@ -146,7 +149,7 @@ func main() {
 			fmt.Print(string(bytes))
 			return
 		}
-		bytes, err := json.Marshal(&cvs.vals)
+		bytes, err := json.MarshalIndent(&cvs.vals, "", "  ")
 		if err != nil {
 
 		}
