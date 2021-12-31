@@ -16,6 +16,8 @@ import (
 	"github.com/alexflint/go-arg"
 )
 
+const timeFormat = "2006-01-02T15:04:05Z"
+
 type certValsSet struct {
 	vals []CertVals
 }
@@ -43,29 +45,36 @@ func getCertVals(host, port string, warnAtDays int, timeout int) CertVals {
 
 	warnIf := warnAtDays * 24 * int(time.Hour)
 
+	dialer := &net.Dialer{Timeout: time.Duration(timeout) * time.Second}
+
 	conn, err := tls.DialWithDialer(
-		&net.Dialer{Timeout: time.Duration(timeout) * time.Second},
+		dialer,
 		"tcp",
 		hostAndPort, nil)
 	if err != nil {
+		certVals.HostError = true
 		certVals.Message = fmt.Sprintf("Server doesn't support TLS certificate err: %s" + err.Error())
+
 		return certVals
 	}
 
 	err = conn.VerifyHostname(host)
 	if err != nil {
+		certVals.HostError = true
 		certVals.Message = fmt.Sprintf("Hostname doesn't match with certificate: %s" + err.Error())
+
 		return certVals
 	}
 	certVals.HostError = false
 
 	notBefore := conn.ConnectionState().PeerCertificates[0].NotBefore
-	certVals.NotBefore = notBefore.Format("2006-01-02T15:04:05Z")
+	certVals.NotBefore = notBefore.Format(timeFormat)
 
 	notAfter := conn.ConnectionState().PeerCertificates[0].NotAfter
-	certVals.NotAfter = notAfter.Format("2006-01-02T15:04:05Z")
+	certVals.NotAfter = notAfter.Format(timeFormat)
+
 	certVals.Message = "OK"
-	certVals.CheckTime = time.Now().Format("2006-01-02T15:04:05Z")
+	certVals.CheckTime = time.Now().Format(timeFormat)
 
 	expired := (time.Now().Add(time.Duration(warnIf)).UnixNano() > notAfter.UnixNano())
 	certVals.ExpiryWarning = expired // Fix this
@@ -114,10 +123,7 @@ func main() {
 
 	arg.MustParse(&args)
 
-	warnAtDays := 30
-	if args.WarnAtDays != warnAtDays {
-		warnAtDays = args.WarnAtDays
-	}
+	warnAtDays := args.WarnAtDays // the arg defaults to 30
 
 	cvs := new(certValsSet)
 
@@ -158,7 +164,6 @@ func main() {
 			certVals := getCertVals(host, port, warnAtDays, args.Timeout)
 			cvs.vals = append(cvs.vals, certVals)
 		}
-
 	} else {
 		for _, host := range args.Hosts {
 			host, port, err := getParts(host)
@@ -177,6 +182,7 @@ func main() {
 
 			}
 			fmt.Print(string(bytes))
+
 			return
 		}
 		bytes, err := json.MarshalIndent(&cvs.vals, "", "  ")
@@ -184,6 +190,7 @@ func main() {
 
 		}
 		fmt.Println(string(bytes))
+
 		return
 	}
 
