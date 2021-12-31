@@ -14,7 +14,7 @@ Examples
 
 YAML output
 
-`% go run . -d google.com:443 cisco.com:443  -y -w 600`
+`% go run . -H google.com:443 cisco.com:443  -y -w 600`
 
 ```yaml
 - expirywarning: true
@@ -37,7 +37,7 @@ YAML output
 
 JSON output
 
-`% go run . -d google.com:443 cisco.com:443  -j -w 600`
+`% go run . -H google.com:443 cisco.com:443  -j -w 600`
 ```json
 [
   {
