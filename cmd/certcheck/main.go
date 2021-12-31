@@ -97,7 +97,8 @@ func getCertVals(host, port string, warnAtDays int, timeout int) CertVals {
 
 	now := time.Now()
 	daysLeft := 0
-	if notAfter.UnixNano() > now.UnixNano() {
+	diff := notAfter.UnixNano() - now.UnixNano()
+	if (diff > 0) && (diff > int64(time.Hour+24)) {
 		daysLeft = int((notAfter.UnixNano() - now.UnixNano()) / int64(time.Hour*24))
 	}
 	certVals.DaysLeft = daysLeft
