@@ -8,7 +8,8 @@ from the current date before a certificate is considered to be at risk of
 expiry.
 
 Go looks up root certificats in OS specific code at `go/src/crypto/x509/` in
-files `root_[OS].go`.
+files `root_[OS].go`. I am not positive currently how much checking is done when
+verifying a certificate.
 
 Help output
 
