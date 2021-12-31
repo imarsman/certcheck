@@ -10,6 +10,24 @@ As far as I can tell Go uses the OS's System TLS certificates to verify that a
 called domain matches the domain being checked. The check should be similar to
 what a browser carries out.
 
+Help output
+
+`% certcheck -h`
+```
+Usage: certcheck [--hosts HOSTS] [--timeout TIMEOUT] [--warnatdays WARNATDAYS] [--yaml] [--json]
+
+Options:
+  --hosts HOSTS, -H HOSTS
+                         host:port list to check
+  --timeout TIMEOUT, -t TIMEOUT
+                         connection timeout seconds [default: 10]
+  --warnatdays WARNATDAYS, -w WARNATDAYS
+                         warn if expiry before days [default: 30]
+  --yaml, -y             display output as YAML
+  --json, -j             display output as JSON (default)
+  --help, -h             display this help and exit
+```
+
 Examples
 
 YAML output
