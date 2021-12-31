@@ -95,11 +95,10 @@ func getCertVals(host, port string, warnAtDays int, timeout int) CertVals {
 	notAfter := conn.ConnectionState().PeerCertificates[0].NotAfter
 	certVals.NotAfter = notAfter.Format(timeFormat)
 
-	oneDay := time.Hour * 24
 	now := time.Now()
 	daysLeft := 0
 	if notAfter.UnixNano() > now.UnixNano() {
-		daysLeft = (int(notAfter.UnixNano()) - int(now.UnixNano())) / int(oneDay)
+		daysLeft = int((notAfter.UnixNano() - now.UnixNano()) / int64(time.Hour*24))
 	}
 	certVals.DaysLeft = daysLeft
 
