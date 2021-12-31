@@ -43,10 +43,12 @@ Options:
   message: OK
   host: google.com
   port: "443"
+  daysleft: 51
   warnatdays: 54
-  checktime: "2021-12-30T20:31:32Z"
+  checktime: "2021-12-31T12:16:33Z"
   notbefore: "2021-11-29T02:22:33Z"
   notafter: "2022-02-21T02:22:32Z"
+  fetchtime: 290ms
 ```
 
 ### JSON output
@@ -60,10 +62,12 @@ Options:
     "message": "OK",
     "host": "google.com",
     "port": "443",
+    "daysleft": 51,
     "warnatdays": 54,
-    "checktime": "2021-12-30T20:32:38Z",
+    "checktime": "2021-12-31T12:16:52Z",
     "notbefore": "2021-11-29T02:22:33Z",
-    "notafter": "2022-02-21T02:22:32Z"
+    "notafter": "2022-02-21T02:22:32Z",
+    "fetchtime": "218ms"
   }
 ]
 ```
@@ -74,7 +78,7 @@ You can also send stdin to the app. If you send space separated domains they
 will be split out. If you send newline delimited domains they will be split out
 and will have lines with more than one domain split.
 
-`% echo "google.com:443 cisco.com:443" | ./certcheck`
+`% echo "google.com:443 cisco.com:443" | certcheck`
 ```json
 [
   {
@@ -83,10 +87,12 @@ and will have lines with more than one domain split.
     "message": "OK",
     "host": "google.com",
     "port": "443",
+    "daysleft": 51,
     "warnatdays": 30,
-    "checktime": "2021-12-30T20:34:15Z",
+    "checktime": "2021-12-31T12:17:32Z",
     "notbefore": "2021-11-29T02:22:33Z",
-    "notafter": "2022-02-21T02:22:32Z"
+    "notafter": "2022-02-21T02:22:32Z",
+    "fetchtime": "208ms"
   },
   {
     "expirywarning": false,
@@ -94,10 +100,12 @@ and will have lines with more than one domain split.
     "message": "OK",
     "host": "cisco.com",
     "port": "443",
+    "daysleft": 66,
     "warnatdays": 30,
-    "checktime": "2021-12-30T20:34:15Z",
+    "checktime": "2021-12-31T12:17:32Z",
     "notbefore": "2021-03-08T15:57:58Z",
-    "notafter": "2022-03-08T16:07:00Z"
+    "notafter": "2022-03-08T16:07:00Z",
+    "fetchtime": "325ms"
   }
 ]
 ```
@@ -111,12 +119,14 @@ having a minimal timeout value in case of errors.
 ```YAML
 - expirywarning: false
   hosterror: true
-  message: 'Server doesn''t support TLS certificate err: %!s(MISSING)dial tcp 142.251.33.174:43:
+  message: 'Server doesn''t support TLS certificate err: %!s(MISSING)dial tcp 142.251.32.78:43:
     i/o timeout'
   host: google.com
   port: "43"
+  daysleft: 0
   warnatdays: 30
-  checktime: ""
+  checktime: "2021-12-31T12:17:53Z"
   notbefore: ""
   notafter: ""
+  fetchtime: 1.000876542s
 ```
