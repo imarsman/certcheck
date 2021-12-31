@@ -40,8 +40,8 @@ Options:
 `% certcheck google.com -w 54 -y`
 ```yaml
 total: 1
-hosterrortotal: 0
-expiredtotal: 1
+hosterrors: 0
+expirywarnings: 1
 certdata:
 - expirywarning: true
   hosterror: false
@@ -63,8 +63,8 @@ certdata:
 ```json
 {
   "total": 1,
-  "hosterrortotal": 0,
-  "expiredtotal": 1,
+  "hosterrors": 0,
+  "expirywarnings": 1,
   "certdata": [
     {
       "expirywarning": true,
@@ -94,8 +94,8 @@ and will have lines with more than one domain split.
 ```json
 {
   "total": 2,
-  "hosterrortotal": 0,
-  "expiredtotal": 0,
+  "hosterrors": 0,
+  "expirywarnings": 0,
   "certdata": [
     {
       "expirywarning": false,
@@ -137,8 +137,8 @@ having a minimal timeout value in case of errors.
 `% certcheck google.com:43 -t 1 -y`
 ```YAML
 total: 1
-hosterrortotal: 1
-expiredtotal: 0
+hosterrors: 1
+expirywarnings: 0
 certdata:
 - expirywarning: false
   hosterror: true

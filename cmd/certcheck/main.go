@@ -32,20 +32,20 @@ var (
 )
 
 type certValsSet struct {
-	Total          int        `json:"total" yaml:"total"`
-	HostErrorTotal int        `json:"hosterrortotal" yaml:"hosterrortotal"`
-	ExpiredTotal   int        `json:"expiredtotal" yaml:"expiredtotal"`
-	Vals           []CertData `json:"certdata" yaml:"certdata"`
+	Total           int        `json:"total" yaml:"total"`
+	HostErrors      int        `json:"hosterrors" yaml:"hosterrors"`
+	ExpiredWarnings int        `json:"expirywarnings" yaml:"expirywarnings"`
+	Vals            []CertData `json:"certdata" yaml:"certdata"`
 }
 
 func (cvs *certValsSet) finalize() {
 	for _, v := range cvs.Vals {
 		cvs.Total++
 		if v.HostError {
-			cvs.HostErrorTotal++
+			cvs.HostErrors++
 		}
 		if v.ExpiryWarning == true {
-			cvs.ExpiredTotal++
+			cvs.ExpiredWarnings++
 		}
 	}
 }
