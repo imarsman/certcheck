@@ -9,6 +9,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"gopkg.in/yaml.v2"
@@ -118,6 +119,9 @@ type args struct {
 	JSON       bool     `arg:"-j" help:"display output as JSON (default)"`
 }
 
+var wg sync.WaitGroup
+var certValChan = make(chan CertVals)
+
 func main() {
 	var callArgs args
 	var cvs = new(certValsSet)
@@ -128,9 +132,13 @@ func main() {
 			if err != nil {
 				continue
 			}
+			wg.Add(1)
 
-			certVals := getCertVals(host, port, callArgs.WarnAtDays, callArgs.Timeout)
-			cvs.vals = append(cvs.vals, certVals)
+			go func(host, port string) {
+				defer wg.Done()
+				certVals := getCertVals(host, port, callArgs.WarnAtDays, callArgs.Timeout)
+				certValChan <- certVals
+			}(host, port)
 		}
 	}
 
@@ -170,6 +178,16 @@ func main() {
 		// Do lookups for arg hosts
 		addCertValsSet(callArgs.Hosts)
 	}
+	go func() {
+		wg.Wait()
+		// Close channel when done
+		close(certValChan)
+	}()
+
+	for certVals := range certValChan {
+		cvs.vals = append(cvs.vals, certVals)
+	}
+
 	if len(cvs.vals) > 0 {
 		if callArgs.YAML {
 			bytes, err := yaml.Marshal(&cvs.vals)

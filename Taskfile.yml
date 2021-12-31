@@ -12,5 +12,5 @@ tasks:
     dir: build
     cmds:
       - task: build
-      - echo "google.com:443 cisco.com:443" | ./certcheck
+      - echo "google.com cisco.com ibm.com amazon.com microsoft.com" | ./certcheck
       - go test -v ../...
