@@ -28,6 +28,7 @@ type CertVals struct {
 	Host          string `json:"host" yaml:"host"`
 	Port          string `json:"port" yaml:"port"`
 	WarnAtDays    int    `json:"warnatdays" yaml:"warnatdays"`
+	CheckTime     string `json:"checktime" yaml:"checktime"`
 	NotBefore     string `json:"notbefore" yaml:"notbefore"`
 	NotAfter      string `json:"notafter" yaml:"notafter"`
 }
@@ -59,11 +60,12 @@ func getCertVals(host, port string, warnAtDays int, timeout int) CertVals {
 	certVals.HostError = false
 
 	notBefore := conn.ConnectionState().PeerCertificates[0].NotBefore
-	certVals.NotBefore = notBefore.Format(time.RFC3339)
+	certVals.NotBefore = notBefore.Format("2006-01-02T15:04:05Z")
 
 	notAfter := conn.ConnectionState().PeerCertificates[0].NotAfter
-	certVals.NotAfter = notAfter.Format(time.RFC3339)
+	certVals.NotAfter = notAfter.Format("2006-01-02T15:04:05Z")
 	certVals.Message = "OK"
+	certVals.CheckTime = time.Now().Format("2006-01-02T15:04:05Z")
 
 	expired := (time.Now().Add(time.Duration(warnIf)).UnixNano() > notAfter.UnixNano())
 	certVals.ExpiryWarning = expired // Fix this
