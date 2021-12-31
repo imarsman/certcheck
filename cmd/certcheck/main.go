@@ -35,6 +35,7 @@ type CertVals struct {
 	Message       string `json:"message" yaml:"message"`
 	Host          string `json:"host" yaml:"host"`
 	Port          string `json:"port" yaml:"port"`
+	DaysLeft      int    `json:"daysleft" yaml:"daysleft"`
 	WarnAtDays    int    `json:"warnatdays" yaml:"warnatdays"`
 	CheckTime     string `json:"checktime" yaml:"checktime"`
 	NotBefore     string `json:"notbefore" yaml:"notbefore"`
@@ -93,6 +94,14 @@ func getCertVals(host, port string, warnAtDays int, timeout int) CertVals {
 
 	notAfter := conn.ConnectionState().PeerCertificates[0].NotAfter
 	certVals.NotAfter = notAfter.Format(timeFormat)
+
+	oneDay := time.Hour * 24
+	now := time.Now()
+	daysLeft := 0
+	if notAfter.UnixNano() > now.UnixNano() {
+		daysLeft = (int(notAfter.UnixNano()) - int(now.UnixNano())) / int(oneDay)
+	}
+	certVals.DaysLeft = daysLeft
 
 	certVals.Message = "OK"
 	certVals.CheckTime = time.Now().Format(timeFormat)
