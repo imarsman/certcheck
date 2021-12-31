@@ -42,7 +42,7 @@ Options:
 total: 1
 hosterrortotal: 0
 expiredtotal: 1
-certvals:
+certdata:
 - expirywarning: true
   hosterror: false
   message: OK
@@ -65,7 +65,7 @@ certvals:
   "total": 1,
   "hosterrortotal": 0,
   "expiredtotal": 1,
-  "certvals": [
+  "certdata": [
     {
       "expirywarning": true,
       "hosterror": false,
@@ -96,7 +96,7 @@ and will have lines with more than one domain split.
   "total": 2,
   "hosterrortotal": 0,
   "expiredtotal": 0,
-  "certvals": [
+  "certdata": [
     {
       "expirywarning": false,
       "hosterror": false,
@@ -139,7 +139,7 @@ having a minimal timeout value in case of errors.
 total: 1
 hosterrortotal: 1
 expiredtotal: 0
-certvals:
+certdata:
 - expirywarning: false
   hosterror: true
   message: 'Server doesn''t support TLS certificate err: %!s(MISSING)dial tcp 142.251.32.78:43:

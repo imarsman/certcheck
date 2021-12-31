@@ -26,7 +26,7 @@ const timeFormat = "2006-01-02T15:04:05Z"
 
 var (
 	wg          sync.WaitGroup                    // waitgroup to wait for work completion
-	certValChan = make(chan CertVals)             // channel for certificate values
+	certValChan = make(chan CertData)             // channel for certificate values
 	sem         = semaphore.NewWeighted(int64(6)) // Set semaphore with capacity
 	ctx         = context.Background()            // ctx for semaphore
 )
@@ -35,7 +35,7 @@ type certValsSet struct {
 	Total          int        `json:"total" yaml:"total"`
 	HostErrorTotal int        `json:"hosterrortotal" yaml:"hosterrortotal"`
 	ExpiredTotal   int        `json:"expiredtotal" yaml:"expiredtotal"`
-	Vals           []CertVals `json:"certvals" yaml:"certvals"`
+	Vals           []CertData `json:"certdata" yaml:"certdata"`
 }
 
 func (cvs *certValsSet) finalize() {
@@ -50,8 +50,8 @@ func (cvs *certValsSet) finalize() {
 	}
 }
 
-// CertVals values for TLS certificate
-type CertVals struct {
+// CertData values for TLS certificate
+type CertData struct {
 	ExpiryWarning bool   `json:"expirywarning" yaml:"expirywarning"`
 	HostError     bool   `json:"hosterror" yaml:"hosterror"`
 	Message       string `json:"message" yaml:"message"`
@@ -67,8 +67,8 @@ type CertVals struct {
 }
 
 // Get new Certvals instance with default values
-func newCertVals() CertVals {
-	certVals := CertVals{}
+func newCertData() CertData {
+	certVals := CertData{}
 	certVals.CheckTime = time.Now().Format(timeFormat)
 	certVals.FetchTime = time.Since(time.Now()).Round(time.Millisecond).String()
 
@@ -76,10 +76,10 @@ func newCertVals() CertVals {
 }
 
 // Do check of cert from remote host and populate CertVals
-func getCertVals(host, port string, warnAtDays int, timeout int) CertVals {
+func getCertVals(host, port string, warnAtDays int, timeout int) CertData {
 	tRun := time.Now()
 
-	certVals := newCertVals()
+	certVals := newCertData()
 	certVals.Host = host
 	certVals.Port = port
 	certVals.HostError = false
@@ -112,11 +112,14 @@ func getCertVals(host, port string, warnAtDays int, timeout int) CertVals {
 	}
 	certVals.HostError = false
 
+	// Set issuer
 	certVals.Issuer = conn.ConnectionState().PeerCertificates[0].Issuer.String()
 
+	// Set cert not before date
 	notBefore := conn.ConnectionState().PeerCertificates[0].NotBefore
 	certVals.NotBefore = notBefore.Format(timeFormat)
 
+	// Set cert not after date
 	notAfter := conn.ConnectionState().PeerCertificates[0].NotAfter
 	certVals.NotAfter = notAfter.Format(timeFormat)
 
@@ -129,11 +132,12 @@ func getCertVals(host, port string, warnAtDays int, timeout int) CertVals {
 	if nanosToExpiry > int64(time.Hour+24) {
 		daysLeft = int((notAfter.UnixNano() - now.UnixNano()) / int64(time.Hour*24))
 	}
-	certVals.DaysLeft = daysLeft
+	certVals.DaysLeft = daysLeft // set days left to expiry
 
 	certVals.Message = "OK"
-	certVals.CheckTime = time.Now().Format(timeFormat)
+	certVals.CheckTime = time.Now().Format(timeFormat) // set time cert was checked
 
+	// Set expiry flag and fetch time
 	expired := (time.Now().Add(time.Duration(warnIf)).UnixNano() > notAfter.UnixNano())
 	certVals.ExpiryWarning = expired
 	certVals.FetchTime = time.Since(tRun).Round(time.Millisecond).String()
@@ -183,7 +187,7 @@ type args struct {
 func main() {
 	var callArgs args
 	var cvs = new(certValsSet)
-	cvs.Vals = make([]CertVals, 0, 0)
+	cvs.Vals = make([]CertData, 0, 0)
 
 	addCertValsSet := func(items []string) {
 		for _, item := range items {
@@ -195,7 +199,7 @@ func main() {
 					defer wg.Done()
 					// Handle semaphore capacity limiting
 
-					certVals := newCertVals()
+					certVals := newCertData()
 					certVals.HostError = true
 					certVals.Message = err.Error()
 					certValChan <- certVals
