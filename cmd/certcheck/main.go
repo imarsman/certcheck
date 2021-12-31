@@ -25,21 +25,21 @@ import (
 const timeFormat = "2006-01-02T15:04:05Z"
 
 var (
-	wg          sync.WaitGroup                    // waitgroup to wait for work completion
-	certValChan = make(chan CertData)             // channel for certificate values
-	sem         = semaphore.NewWeighted(int64(6)) // Set semaphore with capacity
-	ctx         = context.Background()            // ctx for semaphore
+	wg           sync.WaitGroup                    // waitgroup to wait for work completion
+	certDataChan = make(chan CertData)             // channel for certificate values
+	sem          = semaphore.NewWeighted(int64(6)) // Set semaphore with capacity
+	ctx          = context.Background()            // ctx for semaphore
 )
 
 type certValsSet struct {
 	Total           int        `json:"total" yaml:"total"`
 	HostErrors      int        `json:"hosterrors" yaml:"hosterrors"`
 	ExpiredWarnings int        `json:"expirywarnings" yaml:"expirywarnings"`
-	Vals            []CertData `json:"certdata" yaml:"certdata"`
+	CertData        []CertData `json:"certdata" yaml:"certdata"`
 }
 
 func (cvs *certValsSet) finalize() {
-	for _, v := range cvs.Vals {
+	for _, v := range cvs.CertData {
 		cvs.Total++
 		if v.HostError {
 			cvs.HostErrors++
@@ -76,7 +76,7 @@ func newCertData() CertData {
 }
 
 // Do check of cert from remote host and populate CertVals
-func getCertVals(host, port string, warnAtDays int, timeout int) CertData {
+func getCertData(host, port string, warnAtDays int, timeout int) CertData {
 	tRun := time.Now()
 
 	certVals := newCertData()
@@ -84,7 +84,7 @@ func getCertVals(host, port string, warnAtDays int, timeout int) CertData {
 	certVals.Port = port
 	certVals.HostError = false
 	certVals.WarnAtDays = warnAtDays
-	hostAndPort := host + ":" + port
+	hostAndPort := fmt.Sprintf("%s:%s", host, port)
 
 	warnIf := warnAtDays * 24 * int(time.Hour)
 
@@ -124,9 +124,10 @@ func getCertVals(host, port string, warnAtDays int, timeout int) CertData {
 	certVals.NotAfter = notAfter.Format(timeFormat)
 
 	now := time.Now()
-	daysLeft := 0
 	// nanoseconds to expiry of certificate
 	nanosToExpiry := notAfter.UnixNano() - now.UnixNano()
+
+	daysLeft := 0
 
 	// If > one day left report that integer
 	if nanosToExpiry > int64(time.Hour+24) {
@@ -146,7 +147,7 @@ func getCertVals(host, port string, warnAtDays int, timeout int) CertData {
 }
 
 // Extract host and port from incoming host string
-func getParts(input string) (host string, port string, err error) {
+func getDomainAndPort(input string) (host string, port string, err error) {
 	if strings.Contains(input, ":") {
 		parts := strings.Split(input, ":")
 		if len(parts) == 1 {
@@ -187,11 +188,11 @@ type args struct {
 func main() {
 	var callArgs args
 	var cvs = new(certValsSet)
-	cvs.Vals = make([]CertData, 0, 0)
+	cvs.CertData = make([]CertData, 0, 0)
 
 	addCertValsSet := func(items []string) {
 		for _, item := range items {
-			host, port, err := getParts(item)
+			host, port, err := getDomainAndPort(item)
 			if err != nil {
 				wg.Add(1)
 
@@ -202,7 +203,7 @@ func main() {
 					certVals := newCertData()
 					certVals.HostError = true
 					certVals.Message = err.Error()
-					certValChan <- certVals
+					certDataChan <- certVals
 				}(err)
 			} else {
 				wg.Add(1)
@@ -213,13 +214,17 @@ func main() {
 					sem.Acquire(ctx, 1)
 					defer sem.Release(1)
 
-					certValChan <- getCertVals(host, port, callArgs.WarnAtDays, callArgs.Timeout)
+					// Add cert data for host to channel
+					certDataChan <- getCertData(host, port, callArgs.WarnAtDays, callArgs.Timeout)
 				}(host, port)
 			}
 		}
 	}
 
-	arg.MustParse(&callArgs)
+	err := arg.Parse(&callArgs)
+	if err != nil {
+		panic(err)
+	}
 
 	// Use stdin if it is available. Path will be ignored.
 	stat, _ := os.Stdin.Stat()
@@ -270,20 +275,20 @@ func main() {
 		// https://dev.to/sophiedebenedetto/synchronizing-go-routines-with-channels-and-waitgroups-3ke2
 		wg.Wait()
 		// Close channel when done
-		close(certValChan)
+		close(certDataChan)
 	}()
 
 	// Add all cert values from channel to output list
 	// Range will block until the channel is closed.
-	for certVals := range certValChan {
-		cvs.Vals = append(cvs.Vals, certVals)
+	for certVals := range certDataChan {
+		cvs.CertData = append(cvs.CertData, certVals)
 	}
 
 	cvs.finalize() // Produce summary values
 
 	// sort vals slice by host
-	sort.Slice(cvs.Vals, func(i, j int) bool {
-		return cvs.Vals[i].Host < cvs.Vals[j].Host
+	sort.Slice(cvs.CertData, func(i, j int) bool {
+		return cvs.CertData[i].Host < cvs.CertData[j].Host
 	})
 
 	// Handle YAML output
