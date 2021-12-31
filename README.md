@@ -1,14 +1,14 @@
 # TLS certificate check utility
 
-One can use the openssl or curl utilities to get a TLS certificate expiry
+One can use the `openssl` or `curl` utilities to get a TLS certificate expiry
 information for a domain. This utility allows the same retrieval of validity of
 TLS certificate for a domain, a check of a certificate belonging to the domain
-being checked, and the added ability to specify a cutoff number of days from the
-current date before a certificate is considered to be at risk of expiry.
+being investigated, and the added ability to specify a cutoff number of days
+from the current date before a certificate is considered to be at risk of
+expiry.
 
-As far as I can tell Go uses the OS's System TLS certificates to verify that a
-called domain matches the domain being checked. The check should be similar to
-what a browser carries out.
+Go looks up root certificats in OS specific code at `go/src/crypto/x509/` in
+files `root_[OS].go`.
 
 Help output
 
