@@ -181,7 +181,7 @@ func main() {
 		if err != nil {
 
 		}
-		fmt.Print(string(bytes))
+		fmt.Println(string(bytes))
 		return
 	}
 
