@@ -10,6 +10,7 @@ import (
 	"net"
 	"os"
 	"regexp"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -31,7 +32,22 @@ var (
 )
 
 type certValsSet struct {
-	vals []CertVals
+	Total          int        `json:"total" yaml:"total"`
+	HostErrorTotal int        `json:"hosterrortotal" yaml:"hosterrortotal"`
+	ExpiredTotal   int        `json:"expiredtotal" yaml:"expiredtotal"`
+	Vals           []CertVals `json:"certvals" yaml:"certvals"`
+}
+
+func (cvs *certValsSet) finalize() {
+	for _, v := range cvs.Vals {
+		cvs.Total++
+		if v.HostError {
+			cvs.HostErrorTotal++
+		}
+		if v.ExpiryWarning == true {
+			cvs.ExpiredTotal++
+		}
+	}
 }
 
 // CertVals values for TLS certificate
@@ -164,7 +180,7 @@ type args struct {
 func main() {
 	var callArgs args
 	var cvs = new(certValsSet)
-	cvs.vals = make([]CertVals, 0, 0)
+	cvs.Vals = make([]CertVals, 0, 0)
 
 	addCertValsSet := func(items []string) {
 		for _, item := range items {
@@ -253,11 +269,19 @@ func main() {
 	// Add all cert values from channel to output list
 	// Range will block until the channel is closed.
 	for certVals := range certValChan {
-		cvs.vals = append(cvs.vals, certVals)
+		cvs.Vals = append(cvs.Vals, certVals)
 	}
 
+	cvs.finalize() // Produce summary values
+
+	// sort vals slice by host
+	sort.Slice(cvs.Vals, func(i, j int) bool {
+		return cvs.Vals[i].Host < cvs.Vals[j].Host
+	})
+
+	// Handle YAML output
 	if callArgs.YAML {
-		bytes, err := yaml.Marshal(&cvs.vals)
+		bytes, err := yaml.Marshal(&cvs)
 		if err != nil {
 			os.Exit(1)
 		}
@@ -265,7 +289,9 @@ func main() {
 
 		return
 	}
-	bytes, err := json.MarshalIndent(&cvs.vals, "", "  ")
+
+	// Do JSON output by default
+	bytes, err := json.MarshalIndent(&cvs, "", "  ")
 	if err != nil {
 		os.Exit(1)
 	}
