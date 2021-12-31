@@ -10,6 +10,10 @@ tasks:
     cmds:
       - rm -f ../../build/certcheck
       - go build -o ../../build/certcheck .
+      - cmd: rm ~/bin/certcheck
+        ignore_error: true
+      - cmd: cp ../../build/certcheck ~/bin/
+        ignore_error: true
   test:
     desc: test app
     dir: build
