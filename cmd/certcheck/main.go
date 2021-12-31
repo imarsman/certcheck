@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -39,6 +40,14 @@ type CertVals struct {
 	NotBefore     string `json:"notbefore" yaml:"notbefore"`
 	NotAfter      string `json:"notafter" yaml:"notafter"`
 	FetchTime     string `json:"fetchtime" yaml:"fetchtime"`
+}
+
+func newCertVals() CertVals {
+	certVals := CertVals{}
+	certVals.CheckTime = time.Now().Format(timeFormat)
+	certVals.FetchTime = time.Since(time.Now()).Round(time.Millisecond).String()
+
+	return certVals
 }
 
 func getCertVals(host, port string, warnAtDays int, timeout int) CertVals {
@@ -98,11 +107,12 @@ func getParts(input string) (host string, port string, err error) {
 		if len(parts) == 1 {
 			host = parts[0]
 			port = "443"
+		} else if len(parts) == 2 {
+			host = parts[0]
+			port = parts[1]
 		} else {
-			if len(parts) == 2 {
-				host = parts[0]
-				port = parts[1]
-			}
+			err = errors.New("invalid host string " + input)
+			return
 		}
 	} else {
 		host = input
@@ -131,20 +141,30 @@ type args struct {
 func main() {
 	var callArgs args
 	var cvs = new(certValsSet)
+	cvs.vals = make([]CertVals, 0, 0)
 
 	addCertValsSet := func(items []string) {
 		for _, item := range items {
 			host, port, err := getParts(item)
 			if err != nil {
-				continue
-			}
-			wg.Add(1)
+				wg.Add(1)
 
-			go func(host, port string) {
-				<-limiter.C
-				defer wg.Done()
-				certValChan <- getCertVals(host, port, callArgs.WarnAtDays, callArgs.Timeout)
-			}(host, port)
+				go func(err error) {
+					defer wg.Done()
+					certVals := newCertVals()
+					certVals.HostError = true
+					certVals.Message = err.Error()
+					certValChan <- certVals
+				}(err)
+			} else {
+				wg.Add(1)
+
+				go func(host, port string) {
+					<-limiter.C
+					defer wg.Done()
+					certValChan <- getCertVals(host, port, callArgs.WarnAtDays, callArgs.Timeout)
+				}(host, port)
+			}
 		}
 	}
 
