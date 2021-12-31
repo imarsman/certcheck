@@ -3,21 +3,27 @@ version: "3"
 vars:
   hostList: >
     google.com cisco.com ibm.com microsoft.com aws.com www.gov.za amazon.com
+  targetbin: ~/bin
+  buildname: certcheck
+
 tasks:
+  copy:
+    desc: copy build file to local bin
+    dir: .
+    cmds:
+      - if [ -e "{{.targetbin}}/{{.buildname}}" ]; then rm "{{.targetbin}}/{{.buildname}}"; fi
+      - if [ -d "{{.targetbin}}" ]; then cp "./build/{{.buildname}}" "{{.targetbin}}"; fi
   build:
     desc: build app
-    dir: cmd/certcheck
+    dir: cmd/{{.buildname}}
     cmds:
-      - rm -f ../../build/certcheck
-      - go build -o ../../build/certcheck .
-      - cmd: rm ~/bin/certcheck
-        ignore_error: true
-      - cmd: cp ../../build/certcheck ~/bin/
-        ignore_error: true
+      - rm -f ../../build/{{.buildname}}
+      - go build -o ../../build/{{.buildname}} .
+      - task: copy
   test:
     desc: test app
     dir: build
     cmds:
       - task: build
-      - time echo "{{.hostList}}" | ./certcheck
+      - time echo "{{.hostList}}" | ./{{.buildname}}
       - go test -v ../...
