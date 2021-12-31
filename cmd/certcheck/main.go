@@ -56,6 +56,7 @@ type CertVals struct {
 	HostError     bool   `json:"hosterror" yaml:"hosterror"`
 	Message       string `json:"message" yaml:"message"`
 	Host          string `json:"host" yaml:"host"`
+	Issuer        string `json:"issuer" yaml:"issuer"`
 	Port          string `json:"port" yaml:"port"`
 	DaysLeft      int    `json:"daysleft" yaml:"daysleft"`
 	WarnAtDays    int    `json:"warnatdays" yaml:"warnatdays"`
@@ -110,6 +111,8 @@ func getCertVals(host, port string, warnAtDays int, timeout int) CertVals {
 		return certVals
 	}
 	certVals.HostError = false
+
+	certVals.Issuer = conn.ConnectionState().PeerCertificates[0].Issuer.String()
 
 	notBefore := conn.ConnectionState().PeerCertificates[0].NotBefore
 	certVals.NotBefore = notBefore.Format(timeFormat)

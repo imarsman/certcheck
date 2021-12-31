@@ -47,13 +47,14 @@ certvals:
   hosterror: false
   message: OK
   host: google.com
+  issuer: CN=GTS CA 1C3,O=Google Trust Services LLC,C=US
   port: "443"
   daysleft: 51
   warnatdays: 54
-  checktime: "2021-12-31T15:49:29Z"
+  checktime: "2021-12-31T16:03:54Z"
   notbefore: "2021-11-29T02:22:33Z"
   notafter: "2022-02-21T02:22:32Z"
-  fetchtime: 250ms
+  fetchtime: 247ms
 ```
 
 ### JSON output
@@ -70,13 +71,14 @@ certvals:
       "hosterror": false,
       "message": "OK",
       "host": "google.com",
+      "issuer": "CN=GTS CA 1C3,O=Google Trust Services LLC,C=US",
       "port": "443",
       "daysleft": 51,
       "warnatdays": 54,
-      "checktime": "2021-12-31T15:49:47Z",
+      "checktime": "2021-12-31T16:04:13Z",
       "notbefore": "2021-11-29T02:22:33Z",
       "notafter": "2022-02-21T02:22:32Z",
-      "fetchtime": "214ms"
+      "fetchtime": "206ms"
     }
   ]
 }
@@ -100,26 +102,28 @@ and will have lines with more than one domain split.
       "hosterror": false,
       "message": "OK",
       "host": "cisco.com",
+      "issuer": "CN=HydrantID SSL CA G3,O=HydrantID (Avalanche Cloud Corporation),C=US",
       "port": "443",
       "daysleft": 66,
       "warnatdays": 30,
-      "checktime": "2021-12-31T15:50:19Z",
+      "checktime": "2021-12-31T16:04:37Z",
       "notbefore": "2021-03-08T15:57:58Z",
       "notafter": "2022-03-08T16:07:00Z",
-      "fetchtime": "291ms"
+      "fetchtime": "288ms"
     },
     {
       "expirywarning": false,
       "hosterror": false,
       "message": "OK",
       "host": "google.com",
+      "issuer": "CN=GTS CA 1C3,O=Google Trust Services LLC,C=US",
       "port": "443",
       "daysleft": 51,
       "warnatdays": 30,
-      "checktime": "2021-12-31T15:50:19Z",
+      "checktime": "2021-12-31T16:04:37Z",
       "notbefore": "2021-11-29T02:22:33Z",
       "notafter": "2022-02-21T02:22:32Z",
-      "fetchtime": "217ms"
+      "fetchtime": "221ms"
     }
   ]
 }
@@ -138,14 +142,15 @@ expiredtotal: 0
 certvals:
 - expirywarning: false
   hosterror: true
-  message: 'Server doesn''t support TLS certificate err: %!s(MISSING)dial tcp 142.251.41.78:43:
+  message: 'Server doesn''t support TLS certificate err: %!s(MISSING)dial tcp 142.251.32.78:43:
     i/o timeout'
   host: google.com
+  issuer: ""
   port: "43"
   daysleft: 0
   warnatdays: 30
-  checktime: "2021-12-31T15:50:40Z"
+  checktime: "2021-12-31T16:05:09Z"
   notbefore: ""
   notafter: ""
-  fetchtime: 1.001635958s
+  fetchtime: 1.001580167s
 ```
