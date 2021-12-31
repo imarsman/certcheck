@@ -49,7 +49,7 @@ certdata:
   host: google.com
   issuer: CN=GTS CA 1C3,O=Google Trust Services LLC,C=US
   port: "443"
-  daysleft: 51
+  daystoexpiry: 51
   warnatdays: 54
   checktime: "2021-12-31T16:03:54Z"
   notbefore: "2021-11-29T02:22:33Z"
@@ -73,7 +73,7 @@ certdata:
       "host": "google.com",
       "issuer": "CN=GTS CA 1C3,O=Google Trust Services LLC,C=US",
       "port": "443",
-      "daysleft": 51,
+      "daystoexpiry": 51,
       "warnatdays": 54,
       "checktime": "2021-12-31T16:04:13Z",
       "notbefore": "2021-11-29T02:22:33Z",
@@ -104,7 +104,7 @@ and will have lines with more than one domain split.
       "host": "cisco.com",
       "issuer": "CN=HydrantID SSL CA G3,O=HydrantID (Avalanche Cloud Corporation),C=US",
       "port": "443",
-      "daysleft": 66,
+      "daystoexpiry": 66,
       "warnatdays": 30,
       "checktime": "2021-12-31T16:04:37Z",
       "notbefore": "2021-03-08T15:57:58Z",
@@ -118,7 +118,7 @@ and will have lines with more than one domain split.
       "host": "google.com",
       "issuer": "CN=GTS CA 1C3,O=Google Trust Services LLC,C=US",
       "port": "443",
-      "daysleft": 51,
+      "daystoexpiry": 51,
       "warnatdays": 30,
       "checktime": "2021-12-31T16:04:37Z",
       "notbefore": "2021-11-29T02:22:33Z",
@@ -147,7 +147,7 @@ certdata:
   host: google.com
   issuer: ""
   port: "43"
-  daysleft: 0
+  daystoexpiry: 0
   warnatdays: 30
   checktime: "2021-12-31T16:05:09Z"
   notbefore: ""

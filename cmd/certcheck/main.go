@@ -58,7 +58,7 @@ type CertData struct {
 	Host          string `json:"host" yaml:"host"`
 	Issuer        string `json:"issuer" yaml:"issuer"`
 	Port          string `json:"port" yaml:"port"`
-	DaysLeft      int    `json:"daysleft" yaml:"daysleft"`
+	DaysToExpiry  int    `json:"daystoexpiry" yaml:"daystoexpiry"`
 	WarnAtDays    int    `json:"warnatdays" yaml:"warnatdays"`
 	CheckTime     string `json:"checktime" yaml:"checktime"`
 	NotBefore     string `json:"notbefore" yaml:"notbefore"`
@@ -132,7 +132,7 @@ func getCertVals(host, port string, warnAtDays int, timeout int) CertData {
 	if nanosToExpiry > int64(time.Hour+24) {
 		daysLeft = int((notAfter.UnixNano() - now.UnixNano()) / int64(time.Hour*24))
 	}
-	certVals.DaysLeft = daysLeft // set days left to expiry
+	certVals.DaysToExpiry = daysLeft // set days left to expiry
 
 	certVals.Message = "OK"
 	certVals.CheckTime = time.Now().Format(timeFormat) // set time cert was checked
