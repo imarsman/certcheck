@@ -11,8 +11,8 @@ tasks:
     desc: copy build file to local bin
     dir: .
     cmds:
-      - if [ -e "{{.targetbin}}/{{.buildname}}" ]; then rm "{{.targetbin}}/{{.buildname}}"; fi
-      - if [ -d "{{.targetbin}}" ]; then cp "./build/{{.buildname}}" "{{.targetbin}}"; fi
+      - cmd: rm {{.targetbin}}/{{.buildname}} && cp ./build/{{.buildname}} {{.targetbin}}
+        ignore_error: true
   build:
     desc: build app
     dir: cmd/{{.buildname}}
