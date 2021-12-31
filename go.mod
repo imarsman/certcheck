@@ -5,6 +5,7 @@ go 1.17
 require (
 	github.com/alexflint/go-arg v1.4.2
 	github.com/matryer/is v1.4.0
+	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	gopkg.in/yaml.v2 v2.4.0
 )
 
