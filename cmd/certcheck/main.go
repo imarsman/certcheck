@@ -19,6 +19,10 @@ import (
 
 const timeFormat = "2006-01-02T15:04:05Z"
 
+var wg sync.WaitGroup
+var certValChan = make(chan CertVals)
+var limiter = time.NewTicker(50 * time.Millisecond)
+
 type certValsSet struct {
 	vals []CertVals
 }
@@ -34,9 +38,11 @@ type CertVals struct {
 	CheckTime     string `json:"checktime" yaml:"checktime"`
 	NotBefore     string `json:"notbefore" yaml:"notbefore"`
 	NotAfter      string `json:"notafter" yaml:"notafter"`
+	FetchTime     string `json:"fetchtime" yaml:"fetchtime"`
 }
 
 func getCertVals(host, port string, warnAtDays int, timeout int) CertVals {
+	t := time.Now()
 	certVals := CertVals{}
 	certVals.Host = host
 	certVals.Port = port
@@ -55,6 +61,7 @@ func getCertVals(host, port string, warnAtDays int, timeout int) CertVals {
 	if err != nil {
 		certVals.HostError = true
 		certVals.Message = fmt.Sprintf("Server doesn't support TLS certificate err: %s" + err.Error())
+		certVals.FetchTime = time.Since(t).String()
 
 		return certVals
 	}
@@ -63,6 +70,7 @@ func getCertVals(host, port string, warnAtDays int, timeout int) CertVals {
 	if err != nil {
 		certVals.HostError = true
 		certVals.Message = fmt.Sprintf("Hostname doesn't match with certificate: %s" + err.Error())
+		certVals.FetchTime = time.Since(t).String()
 
 		return certVals
 	}
@@ -78,7 +86,8 @@ func getCertVals(host, port string, warnAtDays int, timeout int) CertVals {
 	certVals.CheckTime = time.Now().Format(timeFormat)
 
 	expired := (time.Now().Add(time.Duration(warnIf)).UnixNano() > notAfter.UnixNano())
-	certVals.ExpiryWarning = expired // Fix this
+	certVals.ExpiryWarning = expired
+	certVals.FetchTime = time.Since(t).Round(time.Millisecond).String()
 
 	return certVals
 }
@@ -119,9 +128,6 @@ type args struct {
 	JSON       bool     `arg:"-j" help:"display output as JSON (default)"`
 }
 
-var wg sync.WaitGroup
-var certValChan = make(chan CertVals)
-
 func main() {
 	var callArgs args
 	var cvs = new(certValsSet)
@@ -135,9 +141,9 @@ func main() {
 			wg.Add(1)
 
 			go func(host, port string) {
+				<-limiter.C
 				defer wg.Done()
-				certVals := getCertVals(host, port, callArgs.WarnAtDays, callArgs.Timeout)
-				certValChan <- certVals
+				certValChan <- getCertVals(host, port, callArgs.WarnAtDays, callArgs.Timeout)
 			}(host, port)
 		}
 	}
@@ -155,16 +161,23 @@ func main() {
 		var hosts []string
 		for scanner.Scan() {
 			line := scanner.Text()
+			line = strings.TrimSpace(line)
+
+			if strings.TrimSpace(line) == "" {
+				continue
+			}
 
 			// If hosts are space separated
 			if strings.Contains(line, " ") {
-				// Get rid of duplicates
-				line = strings.ReplaceAll(line, "  ", " ")
+				re := regexp.MustCompile(`\s+`)
 				// Split on space
-				parts := strings.Split(line, " ")
+				parts := re.Split(line, -1)
 				// Add host
 				for _, part := range parts {
 					part = strings.TrimSpace(part)
+					if part == "" {
+						continue
+					}
 					hosts = append(hosts, part)
 				}
 			} else {
@@ -178,34 +191,34 @@ func main() {
 		// Do lookups for arg hosts
 		addCertValsSet(callArgs.Hosts)
 	}
+
+	// Wait for WaitGroup to finish then close channel
 	go func() {
+		// https://stackoverflow.com/questions/46010836/using-goroutines-to-process-values-and-gather-results-into-a-slice
 		wg.Wait()
 		// Close channel when done
 		close(certValChan)
 	}()
 
+	// Add all cert values from channel to output list
 	for certVals := range certValChan {
 		cvs.vals = append(cvs.vals, certVals)
 	}
 
-	if len(cvs.vals) > 0 {
-		if callArgs.YAML {
-			bytes, err := yaml.Marshal(&cvs.vals)
-			if err != nil {
-
-			}
-			fmt.Print(string(bytes))
-
-			return
-		}
-		bytes, err := json.MarshalIndent(&cvs.vals, "", "  ")
+	if callArgs.YAML {
+		bytes, err := yaml.Marshal(&cvs.vals)
 		if err != nil {
-
+			os.Exit(1)
 		}
-		fmt.Println(string(bytes))
+		fmt.Print(string(bytes))
 
 		return
 	}
+	bytes, err := json.MarshalIndent(&cvs.vals, "", "  ")
+	if err != nil {
+		os.Exit(1)
+	}
+	fmt.Println(string(bytes))
 
-	fmt.Fprintln(os.Stderr, "No valid hosts found")
+	return
 }
