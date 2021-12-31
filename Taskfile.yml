@@ -2,9 +2,7 @@ version: "3"
 
 vars:
   hostList: >
-    google.com cisco.com ibm.com 
-    amazon.com microsoft.com www.ourcommons.ca 
-    stackoverflow.com github.com
+    google.com cisco.com ibm.com microsoft.com aws.com www.gov.za amazon.com
 tasks:
   build:
     desc: build app
@@ -19,4 +17,3 @@ tasks:
       - task: build
       - time echo "{{.hostList}}" | ./certcheck
       - go test -v ../...
-      - echo {{.hostList}}
