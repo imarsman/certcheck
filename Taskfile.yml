@@ -5,6 +5,7 @@ tasks:
     desc: build app
     dir: cmd/certcheck
     cmds:
+      - rm -f ../../build/certcheck
       - go build -o ../../build/certcheck .
   test:
     desc: test app
