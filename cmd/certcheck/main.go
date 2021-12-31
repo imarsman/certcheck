@@ -25,10 +25,10 @@ import (
 const timeFormat = "2006-01-02T15:04:05Z"
 
 var (
-	wg          sync.WaitGroup
-	certValChan = make(chan CertVals)
-	sem         = semaphore.NewWeighted(int64(6))
-	ctx         = context.Background()
+	wg          sync.WaitGroup                    // waitgroup to wait for work completion
+	certValChan = make(chan CertVals)             // channel for certificate values
+	sem         = semaphore.NewWeighted(int64(6)) // Set semaphore with capacity
+	ctx         = context.Background()            // ctx for semaphore
 )
 
 type certValsSet struct {
