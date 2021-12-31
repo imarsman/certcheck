@@ -18,14 +18,15 @@ some rate limiting.
 
 `% certcheck -h`
 ```
-Usage: certcheck [--hosts HOSTS] [--timeout TIMEOUT] [--warnatdays WARNATDAYS] [--yaml] [--json]
+Usage: certcheck [--timeout TIMEOUT] [--warnatdays WARNAT] [--yaml] [--json] [HOSTS [HOSTS ...]]
+
+Positional arguments:
+  HOSTS                  host:port list to check
 
 Options:
-  --hosts HOSTS, -H HOSTS
-                         host:port list to check
   --timeout TIMEOUT, -t TIMEOUT
                          connection timeout seconds [default: 10]
-  --warnatdays WARNAT -w WARNAT
+  --warnatdays WARNAT, -w WARNAT
                          warn if expiry before days [default: 30]
   --yaml, -y             display output as YAML
   --json, -j             display output as JSON (default)
@@ -36,7 +37,7 @@ Options:
 
 ### YAML output
 
-`% certcheck -H google.com -w 54 -y`
+`% certcheck google.com -w 54 -y`
 ```yaml
 - expirywarning: true
   hosterror: false
@@ -53,7 +54,7 @@ Options:
 
 ### JSON output
 
-`% certcheck -H google.com -w 54 -j`
+`% certcheck google.com -w 54 -j`
 ```json
 [
   {
@@ -115,7 +116,7 @@ and will have lines with more than one domain split.
 Here is output from a call with a port with no TLS. Note the usefulness of
 having a minimal timeout value in case of errors.
 
-`% certcheck -H google.com:43 -t 1 -y`
+`% certcheck google.com:43 -t 1 -y`
 ```YAML
 - expirywarning: false
   hosterror: true
