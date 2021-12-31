@@ -32,51 +32,34 @@ Examples
 
 YAML output
 
-`% go run . -H google.com:443 cisco.com:443  -y -w 600`
-
+`% certcheck -H google.com -w 54 -y`
 ```yaml
 - expirywarning: true
-  domainerror: false
+  hosterror: false
   message: OK
-  domain: google.com
+  host: google.com
   port: "443"
-  warnatdays: 600
+  warnatdays: 54
+  checktime: "2021-12-30T20:31:32Z"
   notbefore: "2021-11-29T02:22:33Z"
   notafter: "2022-02-21T02:22:32Z"
-- expirywarning: true
-  domainerror: false
-  message: OK
-  domain: cisco.com
-  port: "443"
-  warnatdays: 600
-  notbefore: "2021-03-08T15:57:58Z"
-  notafter: "2022-03-08T16:07:00Z"
 ```
 
 JSON output
 
-`% go run . -H google.com:443 cisco.com:443  -j -w 600`
+`% certcheck -H google.com -w 54 -j`
 ```json
 [
   {
     "expirywarning": true,
-    "domainerror": false,
+    "hosterror": false,
     "message": "OK",
-    "domain": "google.com",
+    "host": "google.com",
     "port": "443",
-    "warnatdays": 600,
+    "warnatdays": 54,
+    "checktime": "2021-12-30T20:32:38Z",
     "notbefore": "2021-11-29T02:22:33Z",
     "notafter": "2022-02-21T02:22:32Z"
-  },
-  {
-    "expirywarning": true,
-    "domainerror": false,
-    "message": "OK",
-    "domain": "cisco.com",
-    "port": "443",
-    "warnatdays": 600,
-    "notbefore": "2021-03-08T15:57:58Z",
-    "notafter": "2022-03-08T16:07:00Z"
   }
 ]
 ```
@@ -95,6 +78,7 @@ and will have lines with more than one domain split.
     "host": "google.com",
     "port": "443",
     "warnatdays": 30,
+    "checktime": "2021-12-30T20:34:15Z",
     "notbefore": "2021-11-29T02:22:33Z",
     "notafter": "2022-02-21T02:22:32Z"
   },
@@ -105,6 +89,7 @@ and will have lines with more than one domain split.
     "host": "cisco.com",
     "port": "443",
     "warnatdays": 30,
+    "checktime": "2021-12-30T20:34:15Z",
     "notbefore": "2021-03-08T15:57:58Z",
     "notafter": "2022-03-08T16:07:00Z"
   }
