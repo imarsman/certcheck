@@ -11,8 +11,8 @@ Go looks up root certificats in OS specific code at `go/src/crypto/x509/` in
 files `root_[OS].go`. I am not positive currently how much checking is done when
 verifying a certificate.
 
-One optimization would be to allow certificate checks to be done in parallel.
-This would be straightforward enough to do and likely will be.
+This app has been optimized to run checks against all hosts in parallel with
+some rate limiting.
 
 ## Help output
 
