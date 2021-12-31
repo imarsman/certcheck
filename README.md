@@ -11,7 +11,10 @@ Go looks up root certificats in OS specific code at `go/src/crypto/x509/` in
 files `root_[OS].go`. I am not positive currently how much checking is done when
 verifying a certificate.
 
-Help output
+One optimization would be to allow certificate checks to be done in parallel.
+This would be straightforward enough to do and likely will be.
+
+## Help output
 
 `% certcheck -h`
 ```
@@ -29,9 +32,9 @@ Options:
   --help, -h             display this help and exit
 ```
 
-Examples
+## Examples
 
-YAML output
+### YAML output
 
 `% certcheck -H google.com -w 54 -y`
 ```yaml
@@ -46,7 +49,7 @@ YAML output
   notafter: "2022-02-21T02:22:32Z"
 ```
 
-JSON output
+### JSON output
 
 `% certcheck -H google.com -w 54 -j`
 ```json
@@ -64,6 +67,8 @@ JSON output
   }
 ]
 ```
+
+## Stdin to app for host list
 
 You can also send stdin to the app. If you send space separated domains they
 will be split out. If you send newline delimited domains they will be split out
@@ -95,4 +100,23 @@ and will have lines with more than one domain split.
     "notafter": "2022-03-08T16:07:00Z"
   }
 ]
+```
+
+## Errors
+
+Here is output from a call with a port with no TLS. Note the usefulness of
+having a minimal timeout value in case of errors.
+
+`% certcheck -H google.com:43 -t 1 -y`
+```YAML
+- expirywarning: false
+  hosterror: true
+  message: 'Server doesn''t support TLS certificate err: %!s(MISSING)dial tcp 142.251.33.174:43:
+    i/o timeout'
+  host: google.com
+  port: "43"
+  warnatdays: 30
+  checktime: ""
+  notbefore: ""
+  notafter: ""
 ```
