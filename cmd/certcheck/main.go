@@ -100,7 +100,7 @@ func getParts(input string) (host string, port string, err error) {
 }
 
 type args struct {
-	Hosts      []string `arg:"-d" help:"host:port list to check"`
+	Hosts      []string `arg:"-H" help:"host:port list to check"`
 	Timeout    int      `arg:"-t" default:"10" help:"connection timeout seconds"`
 	WarnAtDays int      `arg:"-w" default:"30" help:"warn if expiry before days"`
 	YAML       bool     `arg:"-y" help:"display output as YAML"`
