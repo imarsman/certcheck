@@ -42,6 +42,7 @@ type CertVals struct {
 	FetchTime     string `json:"fetchtime" yaml:"fetchtime"`
 }
 
+// Get new Certvals instance with default values
 func newCertVals() CertVals {
 	certVals := CertVals{}
 	certVals.CheckTime = time.Now().Format(timeFormat)
@@ -50,9 +51,11 @@ func newCertVals() CertVals {
 	return certVals
 }
 
+// Do check of cert from remote host and populate CertVals
 func getCertVals(host, port string, warnAtDays int, timeout int) CertVals {
-	t := time.Now()
-	certVals := CertVals{}
+	tRun := time.Now()
+
+	certVals := newCertVals()
 	certVals.Host = host
 	certVals.Port = port
 	certVals.HostError = false
@@ -70,7 +73,7 @@ func getCertVals(host, port string, warnAtDays int, timeout int) CertVals {
 	if err != nil {
 		certVals.HostError = true
 		certVals.Message = fmt.Sprintf("Server doesn't support TLS certificate err: %s" + err.Error())
-		certVals.FetchTime = time.Since(t).String()
+		certVals.FetchTime = time.Since(tRun).String()
 
 		return certVals
 	}
@@ -79,7 +82,7 @@ func getCertVals(host, port string, warnAtDays int, timeout int) CertVals {
 	if err != nil {
 		certVals.HostError = true
 		certVals.Message = fmt.Sprintf("Hostname doesn't match with certificate: %s" + err.Error())
-		certVals.FetchTime = time.Since(t).String()
+		certVals.FetchTime = time.Since(tRun).String()
 
 		return certVals
 	}
@@ -96,11 +99,12 @@ func getCertVals(host, port string, warnAtDays int, timeout int) CertVals {
 
 	expired := (time.Now().Add(time.Duration(warnIf)).UnixNano() > notAfter.UnixNano())
 	certVals.ExpiryWarning = expired
-	certVals.FetchTime = time.Since(t).Round(time.Millisecond).String()
+	certVals.FetchTime = time.Since(tRun).Round(time.Millisecond).String()
 
 	return certVals
 }
 
+// Extract host and port from incoming host string
 func getParts(input string) (host string, port string, err error) {
 	if strings.Contains(input, ":") {
 		parts := strings.Split(input, ":")
@@ -130,6 +134,7 @@ func getParts(input string) (host string, port string, err error) {
 	return
 }
 
+// CLI args
 type args struct {
 	Hosts      []string `arg:"-H" help:"host:port list to check"`
 	Timeout    int      `arg:"-t" default:"10" help:"connection timeout seconds"`
