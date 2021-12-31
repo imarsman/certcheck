@@ -127,14 +127,36 @@ func main() {
 		// Tell scanner to scan by lines.
 		scanner.Split(bufio.ScanLines)
 
+		var lines []string
 		for scanner.Scan() {
-			host, port, err := getParts(scanner.Text())
+			line := scanner.Text()
+
+			// If hosts are space separated
+			if strings.Contains(line, " ") {
+				// Get rid of duplicates
+				line = strings.ReplaceAll(line, "  ", " ")
+				// Split on space
+				parts := strings.Split(line, " ")
+				// Add host
+				for _, part := range parts {
+					part = strings.TrimSpace(part)
+					lines = append(lines, part)
+				}
+			} else {
+				// If one per line
+				lines = append(lines, strings.TrimSpace(line))
+			}
+		}
+		// Take hosts found and do lookup and check
+		for _, line := range lines {
+			host, port, err := getParts(line)
 			if err != nil {
 				continue
 			}
 			certVals := getCertVals(host, port, warnAtDays, args.Timeout)
 			cvs.vals = append(cvs.vals, certVals)
 		}
+
 	} else {
 		for _, host := range args.Hosts {
 			host, port, err := getParts(host)
