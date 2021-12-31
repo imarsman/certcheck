@@ -53,7 +53,8 @@ certvals:
   checktime: "2021-12-31T15:49:29Z"
   notbefore: "2021-11-29T02:22:33Z"
   notafter: "2022-02-21T02:22:32Z"
-  fetchtime: 250ms```
+  fetchtime: 250ms
+```
 
 ### JSON output
 
