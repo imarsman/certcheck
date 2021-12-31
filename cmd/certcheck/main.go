@@ -26,7 +26,7 @@ const timeFormat = "2006-01-02T15:04:05Z"
 var (
 	wg          sync.WaitGroup
 	certValChan = make(chan CertVals)
-	sem         = semaphore.NewWeighted(int64(3))
+	sem         = semaphore.NewWeighted(int64(6))
 	ctx         = context.Background()
 )
 
