@@ -196,6 +196,7 @@ func main() {
 	// complete.
 	go func() {
 		// https://stackoverflow.com/questions/46010836/using-goroutines-to-process-values-and-gather-results-into-a-slice
+		// https://dev.to/sophiedebenedetto/synchronizing-go-routines-with-channels-and-waitgroups-3ke2
 		wg.Wait()
 		// Close channel when done
 		close(certValChan)
