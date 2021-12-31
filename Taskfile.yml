@@ -1,0 +1,14 @@
+version: "3"
+
+tasks:
+  build:
+    desc: build app
+    dir: cmd/certcheck
+    cmds:
+      - go build -o ../../build/certcheck .
+  test:
+    desc: test app
+    dir: build
+    cmds:
+      - task: build
+      - echo "google.com:443 cisco.com:443" | ./certcheck
