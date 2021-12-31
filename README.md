@@ -39,6 +39,10 @@ Options:
 
 `% certcheck google.com -w 54 -y`
 ```yaml
+total: 1
+hosterrortotal: 0
+expiredtotal: 1
+certvals:
 - expirywarning: true
   hosterror: false
   message: OK
@@ -46,31 +50,35 @@ Options:
   port: "443"
   daysleft: 51
   warnatdays: 54
-  checktime: "2021-12-31T12:16:33Z"
+  checktime: "2021-12-31T15:49:29Z"
   notbefore: "2021-11-29T02:22:33Z"
   notafter: "2022-02-21T02:22:32Z"
-  fetchtime: 290ms
-```
+  fetchtime: 250ms```
 
 ### JSON output
 
 `% certcheck google.com -w 54 -j`
 ```json
-[
-  {
-    "expirywarning": true,
-    "hosterror": false,
-    "message": "OK",
-    "host": "google.com",
-    "port": "443",
-    "daysleft": 51,
-    "warnatdays": 54,
-    "checktime": "2021-12-31T12:16:52Z",
-    "notbefore": "2021-11-29T02:22:33Z",
-    "notafter": "2022-02-21T02:22:32Z",
-    "fetchtime": "218ms"
-  }
-]
+{
+  "total": 1,
+  "hosterrortotal": 0,
+  "expiredtotal": 1,
+  "certvals": [
+    {
+      "expirywarning": true,
+      "hosterror": false,
+      "message": "OK",
+      "host": "google.com",
+      "port": "443",
+      "daysleft": 51,
+      "warnatdays": 54,
+      "checktime": "2021-12-31T15:49:47Z",
+      "notbefore": "2021-11-29T02:22:33Z",
+      "notafter": "2022-02-21T02:22:32Z",
+      "fetchtime": "214ms"
+    }
+  ]
+}
 ```
 
 ## Stdin to app for host list
@@ -81,34 +89,39 @@ and will have lines with more than one domain split.
 
 `% echo "google.com:443 cisco.com:443" | certcheck`
 ```json
-[
-  {
-    "expirywarning": false,
-    "hosterror": false,
-    "message": "OK",
-    "host": "google.com",
-    "port": "443",
-    "daysleft": 51,
-    "warnatdays": 30,
-    "checktime": "2021-12-31T12:17:32Z",
-    "notbefore": "2021-11-29T02:22:33Z",
-    "notafter": "2022-02-21T02:22:32Z",
-    "fetchtime": "208ms"
-  },
-  {
-    "expirywarning": false,
-    "hosterror": false,
-    "message": "OK",
-    "host": "cisco.com",
-    "port": "443",
-    "daysleft": 66,
-    "warnatdays": 30,
-    "checktime": "2021-12-31T12:17:32Z",
-    "notbefore": "2021-03-08T15:57:58Z",
-    "notafter": "2022-03-08T16:07:00Z",
-    "fetchtime": "325ms"
-  }
-]
+{
+  "total": 2,
+  "hosterrortotal": 0,
+  "expiredtotal": 0,
+  "certvals": [
+    {
+      "expirywarning": false,
+      "hosterror": false,
+      "message": "OK",
+      "host": "cisco.com",
+      "port": "443",
+      "daysleft": 66,
+      "warnatdays": 30,
+      "checktime": "2021-12-31T15:50:19Z",
+      "notbefore": "2021-03-08T15:57:58Z",
+      "notafter": "2022-03-08T16:07:00Z",
+      "fetchtime": "291ms"
+    },
+    {
+      "expirywarning": false,
+      "hosterror": false,
+      "message": "OK",
+      "host": "google.com",
+      "port": "443",
+      "daysleft": 51,
+      "warnatdays": 30,
+      "checktime": "2021-12-31T15:50:19Z",
+      "notbefore": "2021-11-29T02:22:33Z",
+      "notafter": "2022-02-21T02:22:32Z",
+      "fetchtime": "217ms"
+    }
+  ]
+}
 ```
 
 ## Errors
@@ -118,16 +131,20 @@ having a minimal timeout value in case of errors.
 
 `% certcheck google.com:43 -t 1 -y`
 ```YAML
+total: 1
+hosterrortotal: 1
+expiredtotal: 0
+certvals:
 - expirywarning: false
   hosterror: true
-  message: 'Server doesn''t support TLS certificate err: %!s(MISSING)dial tcp 142.251.32.78:43:
+  message: 'Server doesn''t support TLS certificate err: %!s(MISSING)dial tcp 142.251.41.78:43:
     i/o timeout'
   host: google.com
   port: "43"
   daysleft: 0
   warnatdays: 30
-  checktime: "2021-12-31T12:17:53Z"
+  checktime: "2021-12-31T15:50:40Z"
   notbefore: ""
   notafter: ""
-  fetchtime: 1.000876542s
+  fetchtime: 1.001635958s
 ```
