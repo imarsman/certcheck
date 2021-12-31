@@ -189,10 +189,19 @@ func main() {
 	var callArgs args
 	var cvs = new(certValsSet)
 	cvs.CertData = make([]CertData, 0, 0)
+	var hosts = make(map[string]bool)
 
 	addCertValsSet := func(items []string) {
 		for _, item := range items {
 			host, port, err := getDomainAndPort(item)
+			hostAndPort := fmt.Sprintf("%s:%s", host, port)
+
+			if hosts[hostAndPort] {
+				continue // Skip if this is the same host/port combination
+			} else {
+				hosts[hostAndPort] = true
+			}
+
 			if err != nil {
 				wg.Add(1)
 
