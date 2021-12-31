@@ -119,13 +119,22 @@ type args struct {
 }
 
 func main() {
-	var args args
+	var callArgs args
+	var cvs = new(certValsSet)
 
-	arg.MustParse(&args)
+	addCertValsSet := func(items []string) {
+		for _, item := range items {
+			host, port, err := getParts(item)
+			if err != nil {
+				continue
+			}
 
-	warnAtDays := args.WarnAtDays // the arg defaults to 30
+			certVals := getCertVals(host, port, callArgs.WarnAtDays, callArgs.Timeout)
+			cvs.vals = append(cvs.vals, certVals)
+		}
+	}
 
-	cvs := new(certValsSet)
+	arg.MustParse(&callArgs)
 
 	// Use stdin if it is available. Path will be ignored.
 	stat, _ := os.Stdin.Stat()
@@ -135,7 +144,7 @@ func main() {
 		// Tell scanner to scan by lines.
 		scanner.Split(bufio.ScanLines)
 
-		var lines []string
+		var hosts []string
 		for scanner.Scan() {
 			line := scanner.Text()
 
@@ -148,35 +157,21 @@ func main() {
 				// Add host
 				for _, part := range parts {
 					part = strings.TrimSpace(part)
-					lines = append(lines, part)
+					hosts = append(hosts, part)
 				}
 			} else {
 				// If one per line
-				lines = append(lines, strings.TrimSpace(line))
+				hosts = append(hosts, strings.TrimSpace(line))
 			}
 		}
 		// Take hosts found and do lookup and check
-		for _, line := range lines {
-			host, port, err := getParts(line)
-			if err != nil {
-				continue
-			}
-			certVals := getCertVals(host, port, warnAtDays, args.Timeout)
-			cvs.vals = append(cvs.vals, certVals)
-		}
+		addCertValsSet(hosts)
 	} else {
-		for _, host := range args.Hosts {
-			host, port, err := getParts(host)
-			if err != nil {
-				continue
-			}
-
-			certVals := getCertVals(host, port, warnAtDays, args.Timeout)
-			cvs.vals = append(cvs.vals, certVals)
-		}
+		// Do lookups for arg hosts
+		addCertValsSet(callArgs.Hosts)
 	}
 	if len(cvs.vals) > 0 {
-		if args.YAML {
+		if callArgs.YAML {
 			bytes, err := yaml.Marshal(&cvs.vals)
 			if err != nil {
 
