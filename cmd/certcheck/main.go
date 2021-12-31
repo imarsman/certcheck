@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"errors"
@@ -13,6 +14,8 @@ import (
 	"sync"
 	"time"
 
+	"golang.org/x/sync/semaphore"
+
 	"gopkg.in/yaml.v2"
 
 	"github.com/alexflint/go-arg"
@@ -20,9 +23,12 @@ import (
 
 const timeFormat = "2006-01-02T15:04:05Z"
 
-var wg sync.WaitGroup
-var certValChan = make(chan CertVals)
-var limiter = time.NewTicker(50 * time.Millisecond)
+var (
+	wg          sync.WaitGroup
+	certValChan = make(chan CertVals)
+	sem         = semaphore.NewWeighted(int64(3))
+	ctx         = context.Background()
+)
 
 type certValsSet struct {
 	vals []CertVals
@@ -168,6 +174,8 @@ func main() {
 
 				go func(err error) {
 					defer wg.Done()
+					// Handle semaphore capacity limiting
+
 					certVals := newCertVals()
 					certVals.HostError = true
 					certVals.Message = err.Error()
@@ -177,8 +185,11 @@ func main() {
 				wg.Add(1)
 
 				go func(host, port string) {
-					<-limiter.C
 					defer wg.Done()
+					// Handle semaphore capacity limiting
+					sem.Acquire(ctx, 1)
+					defer sem.Release(1)
+
 					certValChan <- getCertVals(host, port, callArgs.WarnAtDays, callArgs.Timeout)
 				}(host, port)
 			}
