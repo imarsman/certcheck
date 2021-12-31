@@ -192,7 +192,8 @@ func main() {
 		addCertValsSet(callArgs.Hosts)
 	}
 
-	// Wait for WaitGroup to finish then close channel
+	// Wait for WaitGroup to finish then close channel to allow range below to
+	// complete.
 	go func() {
 		// https://stackoverflow.com/questions/46010836/using-goroutines-to-process-values-and-gather-results-into-a-slice
 		wg.Wait()
@@ -201,6 +202,7 @@ func main() {
 	}()
 
 	// Add all cert values from channel to output list
+	// Range will block until the channel is closed.
 	for certVals := range certValChan {
 		cvs.vals = append(cvs.vals, certVals)
 	}
