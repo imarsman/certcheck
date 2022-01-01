@@ -186,10 +186,10 @@ type args struct {
 }
 
 func main() {
-	var callArgs args
-	var cvs = new(certValsSet)
-	cvs.CertData = make([]CertData, 0, 0)
-	var hosts = make(map[string]bool)
+	var callArgs args                     // initialize call args structure
+	var cvs = new(certValsSet)            // initialize Cert Value Set
+	cvs.CertData = make([]CertData, 0, 0) // set up empty slice for CertData
+	var hosts = make(map[string]bool)     // map of hosts to avoid duplicates
 
 	addCertValsSet := func(items []string) {
 		for _, item := range items {
@@ -207,8 +207,7 @@ func main() {
 
 				go func(err error) {
 					defer wg.Done()
-					// Handle semaphore capacity limiting
-
+					// This is fast so no need to use semaphore
 					certVals := newCertData()
 					certVals.HostError = true
 					certVals.Message = err.Error()
