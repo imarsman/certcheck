@@ -31,7 +31,7 @@ var (
 	wg           sync.WaitGroup                    // waitgroup to wait for work completion
 	certDataChan = make(chan CertData)             // channel for certificate values
 	sem          = semaphore.NewWeighted(int64(6)) // Set semaphore with capacity
-	ctx          = context.Background()            // ctx for semaphore
+	semCtx       = context.Background()            // ctx for semaphore
 )
 
 type certValsSet struct {
@@ -222,7 +222,7 @@ func main() {
 				go func(host, port string) {
 					defer wg.Done()
 					// Handle semaphore capacity limiting
-					sem.Acquire(ctx, 1)
+					sem.Acquire(semCtx, 1)
 					defer sem.Release(1)
 
 					// Add cert data for host to channel
