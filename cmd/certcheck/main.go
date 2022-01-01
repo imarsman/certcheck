@@ -22,7 +22,10 @@ import (
 	"github.com/alexflint/go-arg"
 )
 
-const timeFormat = "2006-01-02T15:04:05Z"
+const (
+	timeFormat     = "2006-01-02T15:04:05Z"
+	tlsDefaultPort = "443"
+)
 
 var (
 	wg           sync.WaitGroup                    // waitgroup to wait for work completion
@@ -152,7 +155,7 @@ func getDomainAndPort(input string) (host string, port string, err error) {
 		parts := strings.Split(input, ":")
 		if len(parts) == 1 {
 			host = parts[0]
-			port = "443"
+			port = tlsDefaultPort
 		} else if len(parts) == 2 {
 			host = parts[0]
 			port = parts[1]
@@ -162,7 +165,7 @@ func getDomainAndPort(input string) (host string, port string, err error) {
 		}
 	} else {
 		host = input
-		port = "443"
+		port = tlsDefaultPort
 	}
 	var matched bool
 	matched, err = regexp.MatchString(`\d+`, port)
