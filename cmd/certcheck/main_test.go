@@ -9,11 +9,11 @@ import (
 func TestParseHost(t *testing.T) {
 	is := is.New(t)
 
-	host, port, err := getParts("google.com:443")
+	host, port, err := getDomainAndPort("google.com:443")
 	is.NoErr(err)
 	is.True(port == "443")
 
-	host, port, err = getParts("cisco.com")
+	host, port, err = getDomainAndPort("cisco.com")
 	is.NoErr(err)
 	is.True(port == "443")
 
@@ -22,19 +22,19 @@ func TestParseHost(t *testing.T) {
 
 func TestGetCertVals(t *testing.T) {
 	is := is.New(t)
-	host, port, err := getParts("google.com:443")
+	host, port, err := getDomainAndPort("google.com:443")
 	is.NoErr(err)
 	is.True(port == "443")
 
-	certVals := getCertVals(host, port, 30, 2)
+	certVals := getCertData(host, port, 30, 2)
 
 	t.Logf("%+v", certVals)
 
-	certVals = getCertVals("gooble.com", port, 30, 2)
+	certVals = getCertData("gooble.com", port, 30, 2)
 	t.Logf("%+v", certVals)
 	is.True(certVals.HostError == true)
 
-	certVals = getCertVals("google.com", "27", 30, 1)
+	certVals = getCertData("google.com", "27", 30, 1)
 	t.Logf("%+v", certVals)
 	is.True(certVals.HostError == true)
 }
