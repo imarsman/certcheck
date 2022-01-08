@@ -72,8 +72,9 @@ type CertData struct {
 // Get new Certvals instance with default values
 func newCertData() CertData {
 	certVals := CertData{}
-	certVals.CheckTime = time.Now().Format(timeFormat)
-	certVals.FetchTime = time.Since(time.Now()).Round(time.Millisecond).String()
+	tRun := time.Now()
+	certVals.CheckTime = tRun.Format(timeFormat)
+	certVals.FetchTime = time.Since(tRun).Round(time.Millisecond).String()
 
 	return certVals
 }
@@ -282,8 +283,6 @@ func main() {
 	// Wait for WaitGroup to finish then close channel to allow range below to
 	// complete.
 	go func() {
-		// https://stackoverflow.com/questions/46010836/using-goroutines-to-process-values-and-gather-results-into-a-slice
-		// https://dev.to/sophiedebenedetto/synchronizing-go-routines-with-channels-and-waitgroups-3ke2
 		wg.Wait()
 		// Close channel when done
 		close(certDataChan)
