@@ -2,7 +2,8 @@ version: "3"
 
 vars:
   hostList: >
-    google.com cisco.com ibm.com microsoft.com aws.com www.gov.za amazon.com
+    ibm.com bbc.com amazon.com microsoft.com cisco.com workday.com o.canada.com
+    www.thespec.com www.thestar.com www.parliament.gov.za www.gov.za
   targetbin: ~/bin
   buildname: certcheck
 
@@ -25,5 +26,10 @@ tasks:
     dir: build
     cmds:
       - task: build
-      - time echo "{{.hostList}}" | ./{{.buildname}}
+      - task: run
       - go test -v ../...
+  run:
+    desc: run from cli
+    dir: build
+    cmds:
+      - time echo "{{.hostList}}" | ./{{.buildname}} -y
