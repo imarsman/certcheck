@@ -8,9 +8,15 @@ vars:
   buildname: certcheck
 
 tasks:
+  default:
+    cmds:
+      - echo "use 'task -l' to list tasks"
+    silent: true
   copy:
     desc: copy build file to local bin
     dir: .
+    preconditions:
+      - test -d {{.targetbin}}/
     cmds:
       - cmd: rm {{.targetbin}}/{{.buildname}} && cp ./build/{{.buildname}} {{.targetbin}}
         ignore_error: true
@@ -25,8 +31,7 @@ tasks:
     desc: test app
     dir: build
     cmds:
-      - task: build
-      - task: run
+      - deps: [build, run]
       - go test -v ../...
   run:
     desc: run from cli
