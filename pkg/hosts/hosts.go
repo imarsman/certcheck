@@ -149,6 +149,8 @@ func (hosts *HostDataSet) Process(warnAtDays, timeout int) *CertDataSet {
 			if err != nil {
 				// Make an empty struct
 				go func(err error) {
+					sem.Acquire(semCtx, 1)
+					defer sem.Release(1)
 					// Decrement waitgroup at end of goroutine
 					defer wg.Done()
 					// This is fast so no need to use semaphore
