@@ -57,6 +57,30 @@ type CertValsSet struct {
 	CertData        []CertData `json:"certdata" yaml:"certdata"`
 }
 
+// NewCertValSet make a new cert val set
+func NewCertValSet() *CertValsSet {
+	certValSet := new(CertValsSet)
+	certValSet.CertData = make([]CertData, 0, 0)
+
+	return certValSet
+}
+
+// finalize metadata about the cert data set and sort
+func (certValSet *CertValsSet) finalize() {
+	for _, v := range certValSet.CertData {
+		certValSet.Total++
+		if v.HostError {
+			certValSet.HostErrors++
+		}
+		if v.ExpiryWarning == true {
+			certValSet.ExpiredWarnings++
+		}
+	}
+	sort.Slice(certValSet.CertData, func(i, j int) bool {
+		return certValSet.CertData[i].Host < certValSet.CertData[j].Host
+	})
+}
+
 // JSON get JSON representation of cert value set
 func (certValSet *CertValsSet) JSON() (bytes []byte, err error) {
 	// Do JSON output by default
@@ -74,27 +98,6 @@ func (certValSet *CertValsSet) YAML() (bytes []byte, err error) {
 		return
 	}
 	return
-}
-
-// NewCertValSet make a new cert val set
-func NewCertValSet() *CertValsSet {
-	certValSet := new(CertValsSet)
-	certValSet.CertData = make([]CertData, 0, 0)
-
-	return certValSet
-}
-
-// finalize metadata about the cert data set
-func (certValSet *CertValsSet) finalize() {
-	for _, v := range certValSet.CertData {
-		certValSet.Total++
-		if v.HostError {
-			certValSet.HostErrors++
-		}
-		if v.ExpiryWarning == true {
-			certValSet.ExpiredWarnings++
-		}
-	}
 }
 
 // Hosts hosts to process into cert value set
@@ -185,12 +188,7 @@ func (hosts *Hosts) ProcessHosts(warnAtDays, timeout int) *CertValsSet {
 		certValSet.CertData = append(certValSet.CertData, certVals)
 	}
 
-	certValSet.finalize() // Produce summary values
-
-	// sort vals slice by host
-	sort.Slice(certValSet.CertData, func(i, j int) bool {
-		return certValSet.CertData[i].Host < certValSet.CertData[j].Host
-	})
+	certValSet.finalize() // Produce summary values and sort
 
 	return certValSet
 }
