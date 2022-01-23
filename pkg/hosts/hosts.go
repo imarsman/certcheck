@@ -39,7 +39,7 @@ type CertData struct {
 	FetchTime     string `json:"fetchtime" yaml:"fetchtime"`
 }
 
-// Get new Certvals instance with default values
+// Get new CertData instance with default values
 func newCertData() CertData {
 	certVals := CertData{}
 	tRun := time.Now()
@@ -49,8 +49,8 @@ func newCertData() CertData {
 	return certVals
 }
 
-// CertValsSet a set of certificate value data
-type CertValsSet struct {
+// CertValSet a set of certificate value data
+type CertValSet struct {
 	Total           int        `json:"total" yaml:"total"`
 	HostErrors      int        `json:"hosterrors" yaml:"hosterrors"`
 	ExpiredWarnings int        `json:"expirywarnings" yaml:"expirywarnings"`
@@ -58,15 +58,15 @@ type CertValsSet struct {
 }
 
 // NewCertValSet make a new cert val set
-func NewCertValSet() *CertValsSet {
-	certValSet := new(CertValsSet)
+func NewCertValSet() *CertValSet {
+	certValSet := new(CertValSet)
 	certValSet.CertData = make([]CertData, 0, 0)
 
 	return certValSet
 }
 
 // finalize metadata about the cert data set and sort
-func (certValSet *CertValsSet) finalize() {
+func (certValSet *CertValSet) finalize() {
 	for _, v := range certValSet.CertData {
 		certValSet.Total++
 		if v.HostError {
@@ -82,7 +82,7 @@ func (certValSet *CertValsSet) finalize() {
 }
 
 // JSON get JSON representation of cert value set
-func (certValSet *CertValsSet) JSON() (bytes []byte, err error) {
+func (certValSet *CertValSet) JSON() (bytes []byte, err error) {
 	// Do JSON output by default
 	bytes, err = json.MarshalIndent(&certValSet, "", "  ")
 	if err != nil {
@@ -92,7 +92,7 @@ func (certValSet *CertValsSet) JSON() (bytes []byte, err error) {
 }
 
 // YAML get YAML representation of cert value set
-func (certValSet *CertValsSet) YAML() (bytes []byte, err error) {
+func (certValSet *CertValSet) YAML() (bytes []byte, err error) {
 	bytes, err = yaml.Marshal(&certValSet)
 	if err != nil {
 		return
@@ -105,8 +105,8 @@ type HostDataSet struct {
 	Hosts []string
 }
 
-// Add new hosts
-func (hosts *HostDataSet) Add(items ...string) {
+// AddHosts new hosts
+func (hosts *HostDataSet) AddHosts(items ...string) {
 	hosts.Hosts = append(hosts.Hosts, items...)
 }
 
@@ -118,7 +118,7 @@ func NewHostDataSet() *HostDataSet {
 }
 
 // Process process list of hosts and for each get back cert values
-func (hosts *HostDataSet) Process(warnAtDays, timeout int) *CertValsSet {
+func (hosts *HostDataSet) Process(warnAtDays, timeout int) *CertValSet {
 	var (
 		wg           sync.WaitGroup                    // waitgroup to wait for work completion
 		certDataChan = make(chan CertData)             // channel for certificate values
