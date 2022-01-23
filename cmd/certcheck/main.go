@@ -204,15 +204,16 @@ func main() {
 			hostAndPort := fmt.Sprintf("%s:%s", host, port)
 
 			if hosts[hostAndPort] {
+				// Decrement waitgroup if we are skipping goroutines
+				wg.Done()
 				continue // Skip if this is the same host/port combination
 			} else {
 				hosts[hostAndPort] = true
 			}
 
 			if err != nil {
-				wg.Add(1)
-
 				go func(err error) {
+					// Decrement waitgroup at end of goroutine
 					defer wg.Done()
 					// This is fast so no need to use semaphore
 					certVals := newCertData()
@@ -221,9 +222,8 @@ func main() {
 					certDataChan <- certVals
 				}(err)
 			} else {
-				wg.Add(1)
-
 				go func(host, port string) {
+					// Decrement waitgroup at end of goroutine
 					defer wg.Done()
 					// Handle semaphore capacity limiting
 					sem.Acquire(semCtx, 1)
@@ -263,6 +263,10 @@ func main() {
 				re := regexp.MustCompile(`\s+`)
 				// Split on space
 				parts := re.Split(line, -1)
+				// Add delta tied to number of hosts. Doing this now avoids a race
+				// condition when running all of the host checks since we will do what
+				// we need, namely wait until all are done.
+				wg.Add(len(parts))
 				// Add host
 				for _, part := range parts {
 					part = strings.TrimSpace(part)
@@ -272,6 +276,9 @@ func main() {
 					hosts = append(hosts, part)
 				}
 			} else {
+				// Just one so add delta of 1 to waitgroup since there is just
+				// one to run
+				wg.Add(1)
 				// If one per line
 				hosts = append(hosts, strings.TrimSpace(line))
 			}
@@ -279,6 +286,10 @@ func main() {
 		// Take hosts found and do lookup and check
 		addCertValsSet(hosts)
 	} else {
+		// Add delta tied to number of hosts. Doing this now avoids a race
+		// condition when running all of the host checks since we will do what
+		// we need, namely wait until all are done.
+		wg.Add(len(callArgs.Hosts))
 		// Do lookups for arg hosts
 		addCertValsSet(callArgs.Hosts)
 	}
