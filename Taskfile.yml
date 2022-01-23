@@ -40,3 +40,8 @@ tasks:
     cmds:
       - deps: build
       - time echo "{{.hostList}}" | ./{{.buildname}} -y
+  # make-markdown:
+  #   desc: generate markdown code documentation
+  #   dir: .
+  #   cmds:
+  #     - gomarkdoc --output '{{.Dir}}/README.md' ./...

@@ -41,50 +41,50 @@ type CertData struct {
 
 // Get new CertData instance with default values
 func newCertData() CertData {
-	certVals := CertData{}
+	certData := CertData{}
 	tRun := time.Now()
-	certVals.CheckTime = tRun.Format(timeFormat)
-	certVals.FetchTime = time.Since(tRun).Round(time.Millisecond).String()
+	certData.CheckTime = tRun.Format(timeFormat)
+	certData.FetchTime = time.Since(tRun).Round(time.Millisecond).String()
 
-	return certVals
+	return certData
 }
 
-// CertValSet a set of certificate value data
-type CertValSet struct {
+// CertDataSet a set of certificate value data
+type CertDataSet struct {
 	Total           int        `json:"total" yaml:"total"`
 	HostErrors      int        `json:"hosterrors" yaml:"hosterrors"`
 	ExpiredWarnings int        `json:"expirywarnings" yaml:"expirywarnings"`
 	CertData        []CertData `json:"certdata" yaml:"certdata"`
 }
 
-// NewCertValSet make a new cert val set
-func NewCertValSet() *CertValSet {
-	certValSet := new(CertValSet)
-	certValSet.CertData = make([]CertData, 0, 0)
+// NewCertDataSet make a new cert val set
+func NewCertDataSet() *CertDataSet {
+	certDataSet := new(CertDataSet)
+	certDataSet.CertData = make([]CertData, 0, 0)
 
-	return certValSet
+	return certDataSet
 }
 
 // finalize metadata about the cert data set and sort
-func (certValSet *CertValSet) finalize() {
-	for _, v := range certValSet.CertData {
-		certValSet.Total++
+func (certDataSet *CertDataSet) finalize() {
+	for _, v := range certDataSet.CertData {
+		certDataSet.Total++
 		if v.HostError {
-			certValSet.HostErrors++
+			certDataSet.HostErrors++
 		}
 		if v.ExpiryWarning == true {
-			certValSet.ExpiredWarnings++
+			certDataSet.ExpiredWarnings++
 		}
 	}
-	sort.Slice(certValSet.CertData, func(i, j int) bool {
-		return certValSet.CertData[i].Host < certValSet.CertData[j].Host
+	sort.Slice(certDataSet.CertData, func(i, j int) bool {
+		return certDataSet.CertData[i].Host < certDataSet.CertData[j].Host
 	})
 }
 
 // JSON get JSON representation of cert value set
-func (certValSet *CertValSet) JSON() (bytes []byte, err error) {
+func (certDataSet *CertDataSet) JSON() (bytes []byte, err error) {
 	// Do JSON output by default
-	bytes, err = json.MarshalIndent(&certValSet, "", "  ")
+	bytes, err = json.MarshalIndent(&certDataSet, "", "  ")
 	if err != nil {
 		return
 	}
@@ -92,8 +92,8 @@ func (certValSet *CertValSet) JSON() (bytes []byte, err error) {
 }
 
 // YAML get YAML representation of cert value set
-func (certValSet *CertValSet) YAML() (bytes []byte, err error) {
-	bytes, err = yaml.Marshal(&certValSet)
+func (certDataSet *CertDataSet) YAML() (bytes []byte, err error) {
+	bytes, err = yaml.Marshal(&certDataSet)
 	if err != nil {
 		return
 	}
@@ -118,13 +118,13 @@ func NewHostDataSet() *HostDataSet {
 }
 
 // Process process list of hosts and for each get back cert values
-func (hosts *HostDataSet) Process(warnAtDays, timeout int) *CertValSet {
+func (hosts *HostDataSet) Process(warnAtDays, timeout int) *CertDataSet {
 	var (
 		wg           sync.WaitGroup                    // waitgroup to wait for work completion
 		certDataChan = make(chan CertData)             // channel for certificate values
 		sem          = semaphore.NewWeighted(int64(6)) // Set semaphore with capacity
 		semCtx       = context.Background()            // ctx for semaphore
-		certValSet   = NewCertValSet()
+		certDataSet  = NewCertDataSet()
 		hostMap      = make(map[string]bool) // map of hosts to avoid duplicates
 	)
 
@@ -152,10 +152,10 @@ func (hosts *HostDataSet) Process(warnAtDays, timeout int) *CertValSet {
 					// Decrement waitgroup at end of goroutine
 					defer wg.Done()
 					// This is fast so no need to use semaphore
-					certVals := newCertData()
-					certVals.HostError = true
-					certVals.Message = err.Error()
-					certDataChan <- certVals
+					certData := newCertData()
+					certData.HostError = true
+					certData.Message = err.Error()
+					certDataChan <- certData
 				}(err)
 			} else {
 				// Handle getting certdata and adding it to channel
@@ -184,13 +184,13 @@ func (hosts *HostDataSet) Process(warnAtDays, timeout int) *CertValSet {
 
 	// Add all cert values from channel to output list
 	// Range will block until the channel is closed.
-	for certVals := range certDataChan {
-		certValSet.CertData = append(certValSet.CertData, certVals)
+	for certData := range certDataChan {
+		certDataSet.CertData = append(certDataSet.CertData, certData)
 	}
 
-	certValSet.finalize() // Produce summary values and sort
+	certDataSet.finalize() // Produce summary values and sort
 
-	return certValSet
+	return certDataSet
 }
 
 // Extract host and port from incoming host string
@@ -223,15 +223,15 @@ func getDomainAndPort(input string) (host string, port string, err error) {
 	return
 }
 
-// Do check of cert from remote host and populate CertVals
+// Do check of cert from remote host and populate CertData
 func getCertData(host, port string, warnAtDays int, timeout int) CertData {
 	tRun := time.Now()
 
-	certVals := newCertData()
-	certVals.Host = host
-	certVals.Port = port
-	certVals.HostError = false
-	certVals.WarnAtDays = warnAtDays
+	certData := newCertData()
+	certData.Host = host
+	certData.Port = port
+	certData.HostError = false
+	certData.WarnAtDays = warnAtDays
 	hostAndPort := fmt.Sprintf("%s:%s", host, port)
 
 	warnIf := warnAtDays * 24 * int(time.Hour)
@@ -243,33 +243,33 @@ func getCertData(host, port string, warnAtDays int, timeout int) CertData {
 		"tcp",
 		hostAndPort, nil)
 	if err != nil {
-		certVals.HostError = true
-		certVals.Message = fmt.Sprintf("Server doesn't support TLS certificate err: %s" + err.Error())
-		certVals.FetchTime = time.Since(tRun).String()
+		certData.HostError = true
+		certData.Message = fmt.Sprintf("Server doesn't support TLS certificate err: %s" + err.Error())
+		certData.FetchTime = time.Since(tRun).String()
 
-		return certVals
+		return certData
 	}
 
 	err = conn.VerifyHostname(host)
 	if err != nil {
-		certVals.HostError = true
-		certVals.Message = fmt.Sprintf("Hostname doesn't match with certificate: %s" + err.Error())
-		certVals.FetchTime = time.Since(tRun).String()
+		certData.HostError = true
+		certData.Message = fmt.Sprintf("Hostname doesn't match with certificate: %s" + err.Error())
+		certData.FetchTime = time.Since(tRun).String()
 
-		return certVals
+		return certData
 	}
-	certVals.HostError = false
+	certData.HostError = false
 
 	// Set issuer
-	certVals.Issuer = conn.ConnectionState().PeerCertificates[0].Issuer.String()
+	certData.Issuer = conn.ConnectionState().PeerCertificates[0].Issuer.String()
 
 	// Set cert not before date
 	notBefore := conn.ConnectionState().PeerCertificates[0].NotBefore
-	certVals.NotBefore = notBefore.Format(timeFormat)
+	certData.NotBefore = notBefore.Format(timeFormat)
 
 	// Set cert not after date
 	notAfter := conn.ConnectionState().PeerCertificates[0].NotAfter
-	certVals.NotAfter = notAfter.Format(timeFormat)
+	certData.NotAfter = notAfter.Format(timeFormat)
 
 	now := time.Now()
 	// nanoseconds to expiry of certificate
@@ -281,17 +281,17 @@ func getCertData(host, port string, warnAtDays int, timeout int) CertData {
 	if nanosToExpiry > int64(time.Hour+24) {
 		daysLeft = int((notAfter.UnixNano() - now.UnixNano()) / int64(time.Hour*24))
 	}
-	certVals.DaysToExpiry = daysLeft // set days left to expiry
+	certData.DaysToExpiry = daysLeft // set days left to expiry
 
-	certVals.TotalDays = int((notAfter.UnixNano() - notBefore.UnixNano()) / int64(time.Hour*24))
+	certData.TotalDays = int((notAfter.UnixNano() - notBefore.UnixNano()) / int64(time.Hour*24))
 
-	certVals.Message = "OK"
-	certVals.CheckTime = time.Now().Format(timeFormat) // set time cert was checked
+	certData.Message = "OK"
+	certData.CheckTime = time.Now().Format(timeFormat) // set time cert was checked
 
 	// Set expiry flag and fetch time
 	expired := (time.Now().Add(time.Duration(warnIf)).UnixNano() > notAfter.UnixNano())
-	certVals.ExpiryWarning = expired
-	certVals.FetchTime = time.Since(tRun).Round(time.Millisecond).String()
+	certData.ExpiryWarning = expired
+	certData.FetchTime = time.Since(tRun).Round(time.Millisecond).String()
 
-	return certVals
+	return certData
 }

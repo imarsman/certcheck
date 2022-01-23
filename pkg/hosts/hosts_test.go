@@ -26,17 +26,17 @@ func TestGetCertData(t *testing.T) {
 	is.NoErr(err)
 	is.True(port == "443")
 
-	certVals := getCertData(host, port, 30, 2)
+	certData := getCertData(host, port, 30, 2)
 
-	t.Logf("%+v", certVals)
+	t.Logf("%+v", certData)
 
-	certVals = getCertData("gooble.com", port, 30, 2)
-	t.Logf("%+v", certVals)
-	is.True(certVals.HostError == true)
+	certData = getCertData("gooble.com", port, 30, 2)
+	t.Logf("%+v", certData)
+	is.True(certData.HostError == true)
 
-	certVals = getCertData("google.com", "27", 30, 1)
-	t.Logf("%+v", certVals)
-	is.True(certVals.HostError == true)
+	certData = getCertData("google.com", "27", 30, 1)
+	t.Logf("%+v", certData)
+	is.True(certData.HostError == true)
 	is.True(1 == 1)
 }
 
@@ -45,9 +45,9 @@ func TestGetHostDataSet(t *testing.T) {
 
 	var hosts = NewHostDataSet()
 	hosts.AddHosts("ibm.com")
-	certValSet := hosts.Process(30, 10)
+	certDataSet := hosts.Process(30, 10)
 
-	json, err := certValSet.YAML()
+	json, err := certDataSet.YAML()
 	is.NoErr(err)
 
 	t.Log(string(json))

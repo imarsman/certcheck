@@ -33,7 +33,7 @@ func main() {
 	}
 
 	// Make a cert value set that will hold the output data
-	var certValSet = hosts.NewCertValSet()
+	var certDataSet = hosts.NewCertDataSet()
 
 	// Use stdin if it is available. Path will be ignored.
 	stat, _ := os.Stdin.Stat()
@@ -78,19 +78,19 @@ func main() {
 		hostDataSet.AddHosts(callArgs.Hosts...)
 	}
 
-	certValSet = hostDataSet.Process(callArgs.WarnAtDays, callArgs.Timeout)
+	certDataSet = hostDataSet.Process(callArgs.WarnAtDays, callArgs.Timeout)
 
 	var bytes []byte
 
 	// Handle YAML output
 	if callArgs.YAML {
-		bytes, err = certValSet.YAML()
+		bytes, err = certDataSet.YAML()
 		if err != nil {
 			panic(err)
 		}
 		// Handle JSON output
 	} else {
-		bytes, err = certValSet.JSON()
+		bytes, err = certDataSet.JSON()
 		if err != nil {
 			panic(err)
 		}
