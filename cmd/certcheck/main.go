@@ -193,25 +193,28 @@ type args struct {
 }
 
 func main() {
-	var callArgs args                     // initialize call args structure
-	var cvs = new(certValsSet)            // initialize Cert Value Set
-	cvs.CertData = make([]CertData, 0, 0) // set up empty slice for CertData
-	var hosts = make(map[string]bool)     // map of hosts to avoid duplicates
+	var callArgs args                            // initialize call args structure
+	var certValSet = new(certValsSet)            // initialize Cert Value Set
+	certValSet.CertData = make([]CertData, 0, 0) // set up empty slice for CertData
+	var hostMap = make(map[string]bool)          // map of hosts to avoid duplicates
 
 	addCertValsSet := func(items []string) {
 		for _, item := range items {
 			host, port, err := getDomainAndPort(item)
 			hostAndPort := fmt.Sprintf("%s:%s", host, port)
 
-			if hosts[hostAndPort] {
+			// Skip if this is the same host/port combination
+			if hostMap[hostAndPort] {
 				// Decrement waitgroup if we are skipping goroutines
 				wg.Done()
-				continue // Skip if this is the same host/port combination
+				continue
 			} else {
-				hosts[hostAndPort] = true
+				// Track that this host has come through
+				hostMap[hostAndPort] = true
 			}
 
 			if err != nil {
+				// Make an empty struct
 				go func(err error) {
 					// Decrement waitgroup at end of goroutine
 					defer wg.Done()
@@ -222,6 +225,7 @@ func main() {
 					certDataChan <- certVals
 				}(err)
 			} else {
+				// Handle getting certdata and adding it to channel
 				go func(host, port string) {
 					// Decrement waitgroup at end of goroutine
 					defer wg.Done()
@@ -243,32 +247,32 @@ func main() {
 
 	// Use stdin if it is available. Path will be ignored.
 	stat, _ := os.Stdin.Stat()
+	var hosts []string
 	if (stat.Mode() & os.ModeCharDevice) == 0 {
 
 		var scanner = bufio.NewScanner(os.Stdin)
 		// Tell scanner to scan by lines.
 		scanner.Split(bufio.ScanLines)
 
-		var hosts []string
 		for scanner.Scan() {
-			line := scanner.Text()
-			line = strings.TrimSpace(line)
+			host := scanner.Text()
+			host = strings.TrimSpace(host)
 
-			if strings.TrimSpace(line) == "" {
+			if strings.TrimSpace(host) == "" {
 				continue
 			}
 
 			// If hosts are space separated
-			if strings.Contains(line, " ") {
+			if strings.Contains(host, " ") {
 				re := regexp.MustCompile(`\s+`)
 				// Split on space
-				parts := re.Split(line, -1)
+				argHosts := re.Split(host, -1)
 				// Add delta tied to number of hosts. Doing this now avoids a race
 				// condition when running all of the host checks since we will do what
 				// we need, namely wait until all are done.
-				wg.Add(len(parts))
+				wg.Add(len(argHosts))
 				// Add host
-				for _, part := range parts {
+				for _, part := range argHosts {
 					part = strings.TrimSpace(part)
 					if part == "" {
 						continue
@@ -280,18 +284,19 @@ func main() {
 				// one to run
 				wg.Add(1)
 				// If one per line
-				hosts = append(hosts, strings.TrimSpace(line))
+				hosts = append(hosts, strings.TrimSpace(host))
 			}
 		}
 		// Take hosts found and do lookup and check
 		addCertValsSet(hosts)
 	} else {
+		hosts = callArgs.Hosts
 		// Add delta tied to number of hosts. Doing this now avoids a race
 		// condition when running all of the host checks since we will do what
 		// we need, namely wait until all are done.
-		wg.Add(len(callArgs.Hosts))
+		wg.Add(len(hosts))
 		// Do lookups for arg hosts
-		addCertValsSet(callArgs.Hosts)
+		addCertValsSet(hosts)
 	}
 
 	// Wait for WaitGroup to finish then close channel to allow range below to
@@ -305,19 +310,19 @@ func main() {
 	// Add all cert values from channel to output list
 	// Range will block until the channel is closed.
 	for certVals := range certDataChan {
-		cvs.CertData = append(cvs.CertData, certVals)
+		certValSet.CertData = append(certValSet.CertData, certVals)
 	}
 
-	cvs.finalize() // Produce summary values
+	certValSet.finalize() // Produce summary values
 
 	// sort vals slice by host
-	sort.Slice(cvs.CertData, func(i, j int) bool {
-		return cvs.CertData[i].Host < cvs.CertData[j].Host
+	sort.Slice(certValSet.CertData, func(i, j int) bool {
+		return certValSet.CertData[i].Host < certValSet.CertData[j].Host
 	})
 
 	// Handle YAML output
 	if callArgs.YAML {
-		bytes, err := yaml.Marshal(&cvs)
+		bytes, err := yaml.Marshal(&certValSet)
 		if err != nil {
 			os.Exit(1)
 		}
@@ -327,7 +332,7 @@ func main() {
 	}
 
 	// Do JSON output by default
-	bytes, err := json.MarshalIndent(&cvs, "", "  ")
+	bytes, err := json.MarshalIndent(&certValSet, "", "  ")
 	if err != nil {
 		os.Exit(1)
 	}
