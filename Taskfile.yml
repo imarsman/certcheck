@@ -38,4 +38,5 @@ tasks:
     desc: run from cli
     dir: build
     cmds:
+      - deps: build
       - time echo "{{.hostList}}" | ./{{.buildname}} -y
