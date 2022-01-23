@@ -100,25 +100,25 @@ func (certValSet *CertValsSet) YAML() (bytes []byte, err error) {
 	return
 }
 
-// Hosts hosts to process into cert value set
-type Hosts struct {
+// HostDataSet hosts to process into cert value set
+type HostDataSet struct {
 	Hosts []string
 }
 
 // Add new hosts
-func (hosts *Hosts) Add(items ...string) {
+func (hosts *HostDataSet) Add(items ...string) {
 	hosts.Hosts = append(hosts.Hosts, items...)
 }
 
-// NewHosts hosts struct containing a list of hosts
-func NewHosts() *Hosts {
-	hosts := new(Hosts)
+// NewHostDataSet hosts struct containing a list of hosts
+func NewHostDataSet() *HostDataSet {
+	hosts := new(HostDataSet)
 
 	return hosts
 }
 
-// ProcessHosts process list of hosts and for each get back cert values
-func (hosts *Hosts) ProcessHosts(warnAtDays, timeout int) *CertValsSet {
+// Process process list of hosts and for each get back cert values
+func (hosts *HostDataSet) Process(warnAtDays, timeout int) *CertValsSet {
 	var (
 		wg           sync.WaitGroup                    // waitgroup to wait for work completion
 		certDataChan = make(chan CertData)             // channel for certificate values

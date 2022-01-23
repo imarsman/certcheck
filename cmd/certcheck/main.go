@@ -39,7 +39,7 @@ func main() {
 	stat, _ := os.Stdin.Stat()
 	// var hostsToCheck []string
 
-	var hosts = hosts.NewHosts()
+	var hostDataSet = hosts.NewHostDataSet()
 	if (stat.Mode() & os.ModeCharDevice) == 0 {
 
 		var scanner = bufio.NewScanner(os.Stdin)
@@ -64,21 +64,21 @@ func main() {
 					if part == "" {
 						continue
 					}
-					hosts.Add(part)
+					hostDataSet.AddHosts(part)
 				}
 			} else {
 				// Just one so add delta of 1 to waitgroup since there is just
 				// one to run
 				// wg.Add(1)
 				// If one per line
-				hosts.Add(strings.TrimSpace(host))
+				hostDataSet.AddHosts(strings.TrimSpace(host))
 			}
 		}
 	} else {
-		hosts.Add(callArgs.Hosts...)
+		hostDataSet.AddHosts(callArgs.Hosts...)
 	}
 
-	certValSet = hosts.ProcessHosts(callArgs.WarnAtDays, callArgs.Timeout)
+	certValSet = hostDataSet.Process(callArgs.WarnAtDays, callArgs.Timeout)
 
 	var bytes []byte
 
