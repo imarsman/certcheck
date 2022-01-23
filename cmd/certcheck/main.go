@@ -41,6 +41,13 @@ type certValsSet struct {
 	CertData        []CertData `json:"certdata" yaml:"certdata"`
 }
 
+func newCertValSet() *certValsSet {
+	certValSet := new(certValsSet)
+	certValSet.CertData = make([]CertData, 0, 0)
+
+	return certValSet
+}
+
 func (cvs *certValsSet) finalize() {
 	for _, v := range cvs.CertData {
 		cvs.Total++
@@ -193,12 +200,19 @@ type args struct {
 }
 
 func main() {
-	var callArgs args                            // initialize call args structure
-	var certValSet = new(certValsSet)            // initialize Cert Value Set
-	certValSet.CertData = make([]CertData, 0, 0) // set up empty slice for CertData
-	var hostMap = make(map[string]bool)          // map of hosts to avoid duplicates
+	var callArgs args // initialize call args structure
+	err := arg.Parse(&callArgs)
+	if err != nil {
+		panic(err)
+	}
 
-	addCertValsSet := func(items []string) {
+	// Make a cert value set that will hold the output data
+	var certValSet = newCertValSet()
+
+	var hostMap = make(map[string]bool) // map of hosts to avoid duplicates
+
+	// function to handle adding cert value data to the channel
+	processHosts := func(items []string) {
 		for _, item := range items {
 			host, port, err := getDomainAndPort(item)
 			hostAndPort := fmt.Sprintf("%s:%s", host, port)
@@ -240,14 +254,9 @@ func main() {
 		}
 	}
 
-	err := arg.Parse(&callArgs)
-	if err != nil {
-		panic(err)
-	}
-
 	// Use stdin if it is available. Path will be ignored.
 	stat, _ := os.Stdin.Stat()
-	var hosts []string
+	var hostsToCheck []string
 	if (stat.Mode() & os.ModeCharDevice) == 0 {
 
 		var scanner = bufio.NewScanner(os.Stdin)
@@ -266,37 +275,37 @@ func main() {
 			if strings.Contains(host, " ") {
 				re := regexp.MustCompile(`\s+`)
 				// Split on space
-				argHosts := re.Split(host, -1)
+				stdinHosts := re.Split(host, -1)
 				// Add delta tied to number of hosts. Doing this now avoids a race
-				// condition when running all of the host checks since we will do what
-				// we need, namely wait until all are done.
-				wg.Add(len(argHosts))
+				// condition when running the host checks asynchronously since we will
+				// do what we need, namely wait until all are done.
+				wg.Add(len(stdinHosts))
 				// Add host
-				for _, part := range argHosts {
+				for _, part := range stdinHosts {
 					part = strings.TrimSpace(part)
 					if part == "" {
 						continue
 					}
-					hosts = append(hosts, part)
+					hostsToCheck = append(hostsToCheck, part)
 				}
 			} else {
 				// Just one so add delta of 1 to waitgroup since there is just
 				// one to run
 				wg.Add(1)
 				// If one per line
-				hosts = append(hosts, strings.TrimSpace(host))
+				hostsToCheck = append(hostsToCheck, strings.TrimSpace(host))
 			}
 		}
 		// Take hosts found and do lookup and check
-		addCertValsSet(hosts)
+		processHosts(hostsToCheck)
 	} else {
-		hosts = callArgs.Hosts
+		hostsToCheck = callArgs.Hosts
 		// Add delta tied to number of hosts. Doing this now avoids a race
-		// condition when running all of the host checks since we will do what
-		// we need, namely wait until all are done.
-		wg.Add(len(hosts))
+		// condition when running the host checks asynchronously since we will
+		// do what we need, namely wait until all are done.
+		wg.Add(len(hostsToCheck))
 		// Do lookups for arg hosts
-		addCertValsSet(hosts)
+		processHosts(hostsToCheck)
 	}
 
 	// Wait for WaitGroup to finish then close channel to allow range below to
