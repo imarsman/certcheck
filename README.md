@@ -22,6 +22,9 @@ not to change API, but sub-repository libraries are not so strict. The semaphore
 library provides a weighted semaphore, and the code uses a weight value of 1 for
 each reservation, which makes it act like a standard semaphore.
 
+In case it was ever useful to use just the host checking code outside of the
+main package, that code has been put in its own package at pkg/hosts.
+
 ## Help output
 
 `% certcheck -h`

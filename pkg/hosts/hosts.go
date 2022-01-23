@@ -3,6 +3,7 @@ package hosts
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
@@ -13,6 +14,7 @@ import (
 	"time"
 
 	"golang.org/x/sync/semaphore"
+	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -38,7 +40,7 @@ type CertData struct {
 }
 
 // Get new Certvals instance with default values
-func NewCertData() CertData {
+func newCertData() CertData {
 	certVals := CertData{}
 	tRun := time.Now()
 	certVals.CheckTime = tRun.Format(timeFormat)
@@ -47,11 +49,31 @@ func NewCertData() CertData {
 	return certVals
 }
 
+// CertValsSet a set of certificate value data
 type CertValsSet struct {
 	Total           int        `json:"total" yaml:"total"`
 	HostErrors      int        `json:"hosterrors" yaml:"hosterrors"`
 	ExpiredWarnings int        `json:"expirywarnings" yaml:"expirywarnings"`
 	CertData        []CertData `json:"certdata" yaml:"certdata"`
+}
+
+// JSON get JSON representation of cert value set
+func (certValSet *CertValsSet) JSON() (bytes []byte, err error) {
+	// Do JSON output by default
+	bytes, err = json.MarshalIndent(&certValSet, "", "  ")
+	if err != nil {
+		return
+	}
+	return
+}
+
+// YAML get YAML representation of cert value set
+func (certValSet *CertValsSet) YAML() (bytes []byte, err error) {
+	bytes, err = yaml.Marshal(&certValSet)
+	if err != nil {
+		return
+	}
+	return
 }
 
 // NewCertValSet make a new cert val set
@@ -62,28 +84,32 @@ func NewCertValSet() *CertValsSet {
 	return certValSet
 }
 
-func (cvs *CertValsSet) Finalize() {
-	for _, v := range cvs.CertData {
-		cvs.Total++
+// finalize metadata about the cert data set
+func (certValSet *CertValsSet) finalize() {
+	for _, v := range certValSet.CertData {
+		certValSet.Total++
 		if v.HostError {
-			cvs.HostErrors++
+			certValSet.HostErrors++
 		}
 		if v.ExpiryWarning == true {
-			cvs.ExpiredWarnings++
+			certValSet.ExpiredWarnings++
 		}
 	}
 }
 
+// Hosts hosts to process into cert value set
 type Hosts struct {
 	Hosts []string
 }
 
+// NewHosts hosts struct containing a list of hosts
 func NewHosts() *Hosts {
 	hosts := new(Hosts)
 
 	return hosts
 }
 
+// ProcessHosts process list of hosts and for each get back cert values
 func (hosts *Hosts) ProcessHosts(warnAtDays, timeout int) *CertValsSet {
 	var (
 		wg           sync.WaitGroup                    // waitgroup to wait for work completion
@@ -118,7 +144,7 @@ func (hosts *Hosts) ProcessHosts(warnAtDays, timeout int) *CertValsSet {
 					// Decrement waitgroup at end of goroutine
 					defer wg.Done()
 					// This is fast so no need to use semaphore
-					certVals := NewCertData()
+					certVals := newCertData()
 					certVals.HostError = true
 					certVals.Message = err.Error()
 					certDataChan <- certVals
@@ -154,7 +180,7 @@ func (hosts *Hosts) ProcessHosts(warnAtDays, timeout int) *CertValsSet {
 		certValSet.CertData = append(certValSet.CertData, certVals)
 	}
 
-	certValSet.Finalize() // Produce summary values
+	certValSet.finalize() // Produce summary values
 
 	// sort vals slice by host
 	sort.Slice(certValSet.CertData, func(i, j int) bool {
@@ -198,7 +224,7 @@ func getDomainAndPort(input string) (host string, port string, err error) {
 func getCertData(host, port string, warnAtDays int, timeout int) CertData {
 	tRun := time.Now()
 
-	certVals := NewCertData()
+	certVals := newCertData()
 	certVals.Host = host
 	certVals.Port = port
 	certVals.HostError = false

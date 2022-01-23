@@ -2,16 +2,13 @@ package main
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
 	"os"
 	"regexp"
 	"strings"
 
-	"gopkg.in/yaml.v2"
-
 	"github.com/alexflint/go-arg"
-	"github.com/imarsman/certcheck/cmd/certcheck/hosts"
+	"github.com/imarsman/certcheck/pkg/hosts"
 )
 
 const (
@@ -36,7 +33,7 @@ func main() {
 	}
 
 	// Make a cert value set that will hold the output data
-	var certValSet = new(hosts.CertValsSet)
+	var certValSet = hosts.NewCertValSet()
 
 	// Use stdin if it is available. Path will be ignored.
 	stat, _ := os.Stdin.Stat()
@@ -83,21 +80,20 @@ func main() {
 
 	certValSet = hosts.ProcessHosts(callArgs.WarnAtDays, callArgs.Timeout)
 
+	var bytes []byte
+
 	// Handle YAML output
 	if callArgs.YAML {
-		bytes, err := yaml.Marshal(&certValSet)
+		bytes, err = certValSet.YAML()
 		if err != nil {
-			os.Exit(1)
+			panic(err)
 		}
-		fmt.Print(string(bytes))
-
-		return
-	}
-
-	// Do JSON output by default
-	bytes, err := json.MarshalIndent(&certValSet, "", "  ")
-	if err != nil {
-		os.Exit(1)
+		// Handle JSON output
+	} else {
+		bytes, err = certValSet.JSON()
+		if err != nil {
+			panic(err)
+		}
 	}
 	fmt.Println(string(bytes))
 
