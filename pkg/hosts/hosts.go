@@ -54,6 +54,7 @@ type CertValsSet struct {
 	CertData        []CertData `json:"certdata" yaml:"certdata"`
 }
 
+// NewCertValSet make a new cert val set
 func NewCertValSet() *CertValsSet {
 	certValSet := new(CertValsSet)
 	certValSet.CertData = make([]CertData, 0, 0)
@@ -77,14 +78,13 @@ type Hosts struct {
 	Hosts []string
 }
 
-func NewHosts(list []string) *Hosts {
+func NewHosts() *Hosts {
 	hosts := new(Hosts)
-	hosts.Hosts = list
 
 	return hosts
 }
 
-func (hosts *Hosts) ProcessHosts(list []string, warnAtDays, timeout int) *CertValsSet {
+func (hosts *Hosts) ProcessHosts(warnAtDays, timeout int) *CertValsSet {
 	var (
 		wg           sync.WaitGroup                    // waitgroup to wait for work completion
 		certDataChan = make(chan CertData)             // channel for certificate values
@@ -93,6 +93,8 @@ func (hosts *Hosts) ProcessHosts(list []string, warnAtDays, timeout int) *CertVa
 		certValSet   = NewCertValSet()
 		hostMap      = make(map[string]bool) // map of hosts to avoid duplicates
 	)
+
+	wg.Add(len(hosts.Hosts))
 
 	// function to handle adding cert value data to the channel
 	processHosts := func(items []string) {
@@ -136,7 +138,7 @@ func (hosts *Hosts) ProcessHosts(list []string, warnAtDays, timeout int) *CertVa
 			}
 		}
 	}
-	processHosts(list)
+	processHosts(hosts.Hosts)
 
 	// Wait for WaitGroup to finish then close channel to allow range below to
 	// complete.
@@ -161,56 +163,6 @@ func (hosts *Hosts) ProcessHosts(list []string, warnAtDays, timeout int) *CertVa
 
 	return certValSet
 }
-
-// 	// Make a cert value set that will hold the output data
-// 	var certValSet = NewCertValSet()
-
-// 	var hostMap = make(map[string]bool) // map of hosts to avoid duplicates
-
-// 	// function to handle adding cert value data to the channel
-// 	ProcessHosts := func(items []string, warnAtDays, timeout int) {
-// 		for _, item := range items {
-// 			host, port, err := getDomainAndPort(item)
-// 			hostAndPort := fmt.Sprintf("%s:%s", host, port)
-
-// 			// Skip if this is the same host/port combination
-// 			if hostMap[hostAndPort] {
-// 				// Decrement waitgroup if we are skipping goroutines
-// 				wg.Done()
-// 				continue
-// 			} else {
-// 				// Track that this host has come through
-// 				hostMap[hostAndPort] = true
-// 			}
-
-// 			if err != nil {
-// 				// Make an empty struct
-// 				go func(err error) {
-// 					// Decrement waitgroup at end of goroutine
-// 					defer wg.Done()
-// 					// This is fast so no need to use semaphore
-// 					certVals := NewCertData()
-// 					certVals.HostError = true
-// 					certVals.Message = err.Error()
-// 					certDataChan <- certVals
-// 				}(err)
-// 			} else {
-// 				// Handle getting certdata and adding it to channel
-// 				go func(host, port string) {
-// 					// Decrement waitgroup at end of goroutine
-// 					defer wg.Done()
-// 					// Handle semaphore capacity limiting
-// 					sem.Acquire(semCtx, 1)
-// 					defer sem.Release(1)
-
-// 					// Add cert data for host to channel
-// 					certDataChan <- GetCertData(host, port, warnAtDays, timeout)
-// 				}(host, port)
-// 			}
-// 		}
-// 	}
-
-// }
 
 // Extract host and port from incoming host string
 func getDomainAndPort(input string) (host string, port string, err error) {
