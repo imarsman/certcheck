@@ -64,18 +64,18 @@ func main() {
 					if part == "" {
 						continue
 					}
-					hosts.Hosts = append(hosts.Hosts, part)
+					hosts.Add(part)
 				}
 			} else {
 				// Just one so add delta of 1 to waitgroup since there is just
 				// one to run
 				// wg.Add(1)
 				// If one per line
-				hosts.Hosts = append(hosts.Hosts, strings.TrimSpace(host))
+				hosts.Add(strings.TrimSpace(host))
 			}
 		}
 	} else {
-		hosts.Hosts = callArgs.Hosts
+		hosts.Add(callArgs.Hosts...)
 	}
 
 	certValSet = hosts.ProcessHosts(callArgs.WarnAtDays, callArgs.Timeout)
