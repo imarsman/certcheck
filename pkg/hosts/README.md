@@ -9,14 +9,14 @@ import "github.com/imarsman/certcheck/pkg/hosts"
 ## Index
 
 - [type CertData](<#type-certdata>)
-- [type CertValsSet](<#type-certvalsset>)
-  - [func NewCertValSet() *CertValsSet](<#func-newcertvalset>)
-  - [func (certValSet *CertValsSet) JSON() (bytes []byte, err error)](<#func-certvalsset-json>)
-  - [func (certValSet *CertValsSet) YAML() (bytes []byte, err error)](<#func-certvalsset-yaml>)
-- [type Hosts](<#type-hosts>)
-  - [func NewHosts() *Hosts](<#func-newhosts>)
-  - [func (hosts *Hosts) Add(items ...string)](<#func-hosts-add>)
-  - [func (hosts *Hosts) ProcessHosts(warnAtDays, timeout int) *CertValsSet](<#func-hosts-processhosts>)
+- [type CertValSet](<#type-certvalset>)
+  - [func NewCertValSet() *CertValSet](<#func-newcertvalset>)
+  - [func (certValSet *CertValSet) JSON() (bytes []byte, err error)](<#func-certvalset-json>)
+  - [func (certValSet *CertValSet) YAML() (bytes []byte, err error)](<#func-certvalset-yaml>)
+- [type HostDataSet](<#type-hostdataset>)
+  - [func NewHostDataSet() *HostDataSet](<#func-newhostdataset>)
+  - [func (hosts *HostDataSet) AddHosts(items ...string)](<#func-hostdataset-addhosts>)
+  - [func (hosts *HostDataSet) Process(warnAtDays, timeout int) *CertValSet](<#func-hostdataset-process>)
 
 
 ## type [CertData](<https://github.com/imarsman/certcheck/blob/main/pkg/hosts/hosts.go#L26-L40>)
@@ -41,12 +41,12 @@ type CertData struct {
 }
 ```
 
-## type [CertValsSet](<https://github.com/imarsman/certcheck/blob/main/pkg/hosts/hosts.go#L53-L58>)
+## type [CertValSet](<https://github.com/imarsman/certcheck/blob/main/pkg/hosts/hosts.go#L53-L58>)
 
-CertValsSet a set of certificate value data
+CertValSet a set of certificate value data
 
 ```go
-type CertValsSet struct {
+type CertValSet struct {
     Total           int        `json:"total" yaml:"total"`
     HostErrors      int        `json:"hosterrors" yaml:"hosterrors"`
     ExpiredWarnings int        `json:"expirywarnings" yaml:"expirywarnings"`
@@ -57,60 +57,60 @@ type CertValsSet struct {
 ### func [NewCertValSet](<https://github.com/imarsman/certcheck/blob/main/pkg/hosts/hosts.go#L61>)
 
 ```go
-func NewCertValSet() *CertValsSet
+func NewCertValSet() *CertValSet
 ```
 
 NewCertValSet make a new cert val set
 
-### func \(\*CertValsSet\) [JSON](<https://github.com/imarsman/certcheck/blob/main/pkg/hosts/hosts.go#L85>)
+### func \(\*CertValSet\) [JSON](<https://github.com/imarsman/certcheck/blob/main/pkg/hosts/hosts.go#L85>)
 
 ```go
-func (certValSet *CertValsSet) JSON() (bytes []byte, err error)
+func (certValSet *CertValSet) JSON() (bytes []byte, err error)
 ```
 
 JSON get JSON representation of cert value set
 
-### func \(\*CertValsSet\) [YAML](<https://github.com/imarsman/certcheck/blob/main/pkg/hosts/hosts.go#L95>)
+### func \(\*CertValSet\) [YAML](<https://github.com/imarsman/certcheck/blob/main/pkg/hosts/hosts.go#L95>)
 
 ```go
-func (certValSet *CertValsSet) YAML() (bytes []byte, err error)
+func (certValSet *CertValSet) YAML() (bytes []byte, err error)
 ```
 
 YAML get YAML representation of cert value set
 
-## type [Hosts](<https://github.com/imarsman/certcheck/blob/main/pkg/hosts/hosts.go#L104-L106>)
+## type [HostDataSet](<https://github.com/imarsman/certcheck/blob/main/pkg/hosts/hosts.go#L104-L106>)
 
-Hosts hosts to process into cert value set
+HostDataSet hosts to process into cert value set
 
 ```go
-type Hosts struct {
+type HostDataSet struct {
     Hosts []string
 }
 ```
 
-### func [NewHosts](<https://github.com/imarsman/certcheck/blob/main/pkg/hosts/hosts.go#L114>)
+### func [NewHostDataSet](<https://github.com/imarsman/certcheck/blob/main/pkg/hosts/hosts.go#L114>)
 
 ```go
-func NewHosts() *Hosts
+func NewHostDataSet() *HostDataSet
 ```
 
-NewHosts hosts struct containing a list of hosts
+NewHostDataSet hosts struct containing a list of hosts
 
-### func \(\*Hosts\) [Add](<https://github.com/imarsman/certcheck/blob/main/pkg/hosts/hosts.go#L109>)
+### func \(\*HostDataSet\) [AddHosts](<https://github.com/imarsman/certcheck/blob/main/pkg/hosts/hosts.go#L109>)
 
 ```go
-func (hosts *Hosts) Add(items ...string)
+func (hosts *HostDataSet) AddHosts(items ...string)
 ```
 
-Add new hosts
+AddHosts new hosts
 
-### func \(\*Hosts\) [ProcessHosts](<https://github.com/imarsman/certcheck/blob/main/pkg/hosts/hosts.go#L121>)
+### func \(\*HostDataSet\) [Process](<https://github.com/imarsman/certcheck/blob/main/pkg/hosts/hosts.go#L121>)
 
 ```go
-func (hosts *Hosts) ProcessHosts(warnAtDays, timeout int) *CertValsSet
+func (hosts *HostDataSet) Process(warnAtDays, timeout int) *CertValSet
 ```
 
-ProcessHosts process list of hosts and for each get back cert values
+Process process list of hosts and for each get back cert values
 
 
 

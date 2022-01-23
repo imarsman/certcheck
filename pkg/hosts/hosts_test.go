@@ -40,12 +40,12 @@ func TestGetCertData(t *testing.T) {
 	is.True(1 == 1)
 }
 
-func TestGetCertVals(t *testing.T) {
+func TestGetHostDataSet(t *testing.T) {
 	is := is.New(t)
 
-	var hosts = NewHosts()
-	hosts.Add("ibm.com")
-	certValSet := hosts.ProcessHosts(30, 10)
+	var hosts = NewHostDataSet()
+	hosts.AddHosts("ibm.com")
+	certValSet := hosts.Process(30, 10)
 
 	json, err := certValSet.YAML()
 	is.NoErr(err)
