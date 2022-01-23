@@ -67,10 +67,6 @@ func main() {
 					hostDataSet.AddHosts(part)
 				}
 			} else {
-				// Just one so add delta of 1 to waitgroup since there is just
-				// one to run
-				// wg.Add(1)
-				// If one per line
 				hostDataSet.AddHosts(strings.TrimSpace(host))
 			}
 		}
