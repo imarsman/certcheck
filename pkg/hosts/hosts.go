@@ -102,6 +102,11 @@ type Hosts struct {
 	Hosts []string
 }
 
+// Add new hosts
+func (hosts *Hosts) Add(items ...string) {
+	hosts.Hosts = append(hosts.Hosts, items...)
+}
+
 // NewHosts hosts struct containing a list of hosts
 func NewHosts() *Hosts {
 	hosts := new(Hosts)
