@@ -31,7 +31,8 @@ tasks:
     desc: test app
     dir: build
     cmds:
-      - deps: [build, run]
+      - go clean -testcache
+      - deps: build
       - go test -v ../...
   run:
     desc: run from cli
