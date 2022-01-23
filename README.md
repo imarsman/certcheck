@@ -11,8 +11,16 @@ Go looks up root certificats in OS specific code at `go/src/crypto/x509/` in
 files `root_[OS].go`. I am not positive currently how much checking is done when
 verifying a certificate.
 
-This app has been optimized to run checks against multiple hosts in parallel with
-maximum concurrency controlled by a semaphore.
+This app has been optimized to run checks against multiple hosts in parallel
+with maximum concurrency controlled by a semaphore. The Tasfile test task runs
+11 host checks which, because they are running in parallel, takes on average
+under 110 ms for each to run, using a semaphore with a capacity of 6. 
+
+The semaphore library used is Golang's x/sync/semaphore package, which is in the
+Golang sub-repository collection. Golang core libraries have a strong promise
+not to change API, but sub-repository libraries are not so strict. The semaphore
+library provides a weighted semaphore, and the code uses a weight value of 1 for
+each reservation, which makes it act like a standard semaphore.
 
 ## Help output
 
