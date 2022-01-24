@@ -117,13 +117,17 @@ func NewHostDataSet() *HostDataSet {
 	return hosts
 }
 
+// Semaphore is for all requests to Process
+var (
+	sem    = semaphore.NewWeighted(int64(6)) // Set semaphore with capacity
+	semCtx = context.Background()            // ctx for semaphore
+)
+
 // Process process list of hosts and for each get back cert values
 func (hosts *HostDataSet) Process(warnAtDays, timeout int) *CertDataSet {
 	var (
-		wg           sync.WaitGroup                    // waitgroup to wait for work completion
-		certDataChan = make(chan CertData)             // channel for certificate values
-		sem          = semaphore.NewWeighted(int64(6)) // Set semaphore with capacity
-		semCtx       = context.Background()            // ctx for semaphore
+		wg           sync.WaitGroup        // waitgroup to wait for work completion
+		certDataChan = make(chan CertData) // channel for certificate values
 		certDataSet  = NewCertDataSet()
 		hostMap      = make(map[string]bool) // map of hosts to avoid duplicates
 	)
