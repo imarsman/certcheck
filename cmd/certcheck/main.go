@@ -13,11 +13,6 @@ import (
 	"github.com/imarsman/certcheck/pkg/hosts"
 )
 
-const (
-	timeFormat     = "2006-01-02T15:04:05Z"
-	tlsDefaultPort = "443"
-)
-
 // CLI args
 type args struct {
 	Hosts      []string `arg:"positional" help:"host:port list to check"`
@@ -27,6 +22,7 @@ type args struct {
 	JSON       bool     `arg:"-j" help:"display output as JSON (default)"`
 }
 
+// Entry point for app
 func main() {
 	var callArgs args // initialize call args structure
 	err := arg.Parse(&callArgs)
