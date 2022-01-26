@@ -6,6 +6,8 @@ vars:
     www.thespec.com www.thestar.com www.parliament.gov.za www.gov.za
   targetbin: ~/bin
   buildname: certcheck
+  dir: >
+    {{.DIR}}
 
 tasks:
   default:
@@ -40,8 +42,8 @@ tasks:
     cmds:
       - deps: build
       - time echo "{{.hostList}}" | ./{{.buildname}} -y
-  # make-markdown:
-  #   desc: generate markdown code documentation
-  #   dir: .
-  #   cmds:
-  #     - gomarkdoc --output '{{.Dir}}/README.md' ./...
+  makemarkdoc:
+    desc: generate markdown code documentation
+    dir: .
+    cmds:
+      - ./scripts/makemarkdown.sh
