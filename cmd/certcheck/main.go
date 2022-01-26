@@ -1,3 +1,5 @@
+// Package main parses command line arguments and uses the hosts package to do
+// TLS lookups.
 package main
 
 import (
@@ -39,7 +41,7 @@ func main() {
 	stat, _ := os.Stdin.Stat()
 	// var hostsToCheck []string
 
-	var hostDataSet = hosts.NewHostDataSet()
+	var hostDataSet = hosts.NewHostSet()
 	if (stat.Mode() & os.ModeCharDevice) == 0 {
 
 		var scanner = bufio.NewScanner(os.Stdin)
