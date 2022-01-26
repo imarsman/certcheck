@@ -6,6 +6,8 @@
 import "github.com/imarsman/certcheck/cmd/certcheck"
 ```
 
+Package main parses command line arguments and uses the hosts package to do TLS lookups\.
+
 ## Index
 
 
