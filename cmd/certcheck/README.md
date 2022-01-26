@@ -10,7 +10,31 @@ Package main parses command line arguments and uses the hosts package to do TLS 
 
 ## Index
 
+- [func main()](<#func-main>)
+- [type args](<#type-args>)
 
+
+## func [main](<https://github.com/imarsman/certcheck/blob/main/cmd/certcheck/main.go#L26>)
+
+```go
+func main()
+```
+
+Entry point for app
+
+## type [args](<https://github.com/imarsman/certcheck/blob/main/cmd/certcheck/main.go#L17-L23>)
+
+CLI args
+
+```go
+type args struct {
+    Hosts      []string `arg:"positional" help:"host:port list to check"`
+    Timeout    int      `arg:"-t" default:"10" help:"connection timeout seconds"`
+    WarnAtDays int      `arg:"-w" placeholder:"WARNAT" default:"30" help:"warn if expiry before days"`
+    YAML       bool     `arg:"-y" help:"display output as YAML"`
+    JSON       bool     `arg:"-j" help:"display output as JSON (default)"`
+}
+```
 
 
 
