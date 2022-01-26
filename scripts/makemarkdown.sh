@@ -1,0 +1,3 @@
+#!/bin/bash
+
+gomarkdoc --output '{{.Dir}}/README.md' ./...
