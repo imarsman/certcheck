@@ -43,7 +43,7 @@ func TestGetCertData(t *testing.T) {
 func TestGetHostDataSet(t *testing.T) {
 	is := is.New(t)
 
-	var hosts = NewHostDataSet()
+	var hosts = NewHostSet()
 	hosts.AddHosts("ibm.com")
 	certDataSet := hosts.Process(30, 10)
 

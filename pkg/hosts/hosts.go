@@ -1,3 +1,6 @@
+// Package hosts is standalone and as such allows hosts to be looked up separate
+// from the main package.
+
 package hosts
 
 import (
@@ -22,7 +25,7 @@ const (
 	tlsDefaultPort = "443"
 )
 
-// CertData values for TLS certificate
+// CertData values for a TLS certificate
 type CertData struct {
 	ExpiryWarning bool   `json:"expirywarning" yaml:"expirywarning"`
 	HostError     bool   `json:"hosterror" yaml:"hosterror"`
@@ -49,7 +52,7 @@ func newCertData() CertData {
 	return certData
 }
 
-// CertDataSet a set of certificate value data
+// CertDataSet a set of TLS certificate data for a list of hosts plus summary
 type CertDataSet struct {
 	Total           int        `json:"total" yaml:"total"`
 	HostErrors      int        `json:"hosterrors" yaml:"hosterrors"`
@@ -57,7 +60,7 @@ type CertDataSet struct {
 	CertData        []CertData `json:"certdata" yaml:"certdata"`
 }
 
-// NewCertDataSet make a new cert val set
+// NewCertDataSet new cert data set
 func NewCertDataSet() *CertDataSet {
 	certDataSet := new(CertDataSet)
 	certDataSet.CertData = make([]CertData, 0, 0)
@@ -81,7 +84,26 @@ func (certDataSet *CertDataSet) finalize() {
 	})
 }
 
-// JSON get JSON representation of cert value set
+// JSON get JSON representation of data for a host certificate
+func (certData *CertData) JSON() (bytes []byte, err error) {
+	// Do JSON output by default
+	bytes, err = json.MarshalIndent(&certData, "", "  ")
+	if err != nil {
+		return
+	}
+	return
+}
+
+// YAML get YAML representation of data for a host certificate
+func (certData *CertData) YAML() (bytes []byte, err error) {
+	bytes, err = yaml.Marshal(&certData)
+	if err != nil {
+		return
+	}
+	return
+}
+
+// JSON get JSON representation of data for a set of host certificates
 func (certDataSet *CertDataSet) JSON() (bytes []byte, err error) {
 	// Do JSON output by default
 	bytes, err = json.MarshalIndent(&certDataSet, "", "  ")
@@ -91,7 +113,7 @@ func (certDataSet *CertDataSet) JSON() (bytes []byte, err error) {
 	return
 }
 
-// YAML get YAML representation of cert value set
+// YAML get YAML representation of data for a set of host certificates
 func (certDataSet *CertDataSet) YAML() (bytes []byte, err error) {
 	bytes, err = yaml.Marshal(&certDataSet)
 	if err != nil {
@@ -100,19 +122,19 @@ func (certDataSet *CertDataSet) YAML() (bytes []byte, err error) {
 	return
 }
 
-// HostDataSet hosts to process into cert value set
-type HostDataSet struct {
+// HostSet hosts to process into cert value set
+type HostSet struct {
 	Hosts []string
 }
 
-// AddHosts new hosts
-func (hosts *HostDataSet) AddHosts(items ...string) {
-	hosts.Hosts = append(hosts.Hosts, items...)
+// AddHosts add hosts to HostDataSet
+func (hostSet *HostSet) AddHosts(items ...string) {
+	hostSet.Hosts = append(hostSet.Hosts, items...)
 }
 
-// NewHostDataSet hosts struct containing a list of hosts
-func NewHostDataSet() *HostDataSet {
-	hosts := new(HostDataSet)
+// NewHostSet hosts struct containing a list of hosts
+func NewHostSet() *HostSet {
+	hosts := new(HostSet)
 
 	return hosts
 }
@@ -124,7 +146,7 @@ var (
 )
 
 // Process process list of hosts and for each get back cert values
-func (hosts *HostDataSet) Process(warnAtDays, timeout int) *CertDataSet {
+func (hostSet *HostSet) Process(warnAtDays, timeout int) *CertDataSet {
 	var (
 		wg           sync.WaitGroup        // waitgroup to wait for work completion
 		certDataChan = make(chan CertData) // channel for certificate values
@@ -132,7 +154,7 @@ func (hosts *HostDataSet) Process(warnAtDays, timeout int) *CertDataSet {
 		hostMap      = make(map[string]bool) // map of hosts to avoid duplicates
 	)
 
-	wg.Add(len(hosts.Hosts))
+	wg.Add(len(hostSet.Hosts))
 
 	// function to handle adding cert value data to the channel
 	processHosts := func(items []string) {
@@ -178,7 +200,7 @@ func (hosts *HostDataSet) Process(warnAtDays, timeout int) *CertDataSet {
 			}
 		}
 	}
-	processHosts(hosts.Hosts)
+	processHosts(hostSet.Hosts)
 
 	// Wait for WaitGroup to finish then close channel to allow range below to
 	// complete.
