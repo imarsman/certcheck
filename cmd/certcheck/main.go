@@ -13,7 +13,7 @@ import (
 	"github.com/imarsman/certcheck/pkg/hosts"
 )
 
-// CLI args
+// args CLI args
 type args struct {
 	Hosts      []string `arg:"positional" help:"host:port list to check"`
 	Timeout    int      `arg:"-t" default:"10" help:"connection timeout seconds"`
@@ -25,10 +25,7 @@ type args struct {
 // Entry point for app
 func main() {
 	var callArgs args // initialize call args structure
-	err := arg.Parse(&callArgs)
-	if err != nil {
-		panic(err)
-	}
+	arg.MustParse(&callArgs)
 
 	// Make a cert value set that will hold the output data
 	var certDataSet = hosts.NewCertDataSet()
@@ -75,6 +72,7 @@ func main() {
 	certDataSet = hostDataSet.Process(callArgs.WarnAtDays, callArgs.Timeout)
 
 	var bytes []byte
+	var err error
 
 	// Handle YAML output
 	if callArgs.YAML {
