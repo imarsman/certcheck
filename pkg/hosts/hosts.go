@@ -1,7 +1,7 @@
+package hosts
+
 // Package hosts is standalone and as such allows hosts to be looked up separate
 // from the main package.
-
-package hosts
 
 import (
 	"context"
@@ -220,6 +220,7 @@ func (hostSet *HostSet) Process(warnAtDays, timeout int) *CertDataSet {
 			// Add cert data for host to channel
 			certData = getCertData(host, port, warnAtDays, timeout)
 		}
+		// Set error to context error
 		if ctx.Err() != nil {
 			err = ctx.Err()
 		}
@@ -229,11 +230,24 @@ func (hostSet *HostSet) Process(warnAtDays, timeout int) *CertDataSet {
 
 	// Make a list of promises and let them start running
 	var runList = []*gcon.Promise[CertData]{}
-	for _, host := range hostSet.Hosts {
+
+	var getPromise = func(host string) (promise *gcon.Promise[CertData], cancel context.CancelFunc) {
+		sem.Acquire(context.Background(), 1)
+		defer sem.Release(1)
+		// WithCancellation will handle the context cancel
+		withCancellation := gcon.WithCancellation(processHost)
+
 		ctx := context.Background()
-		ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+		ctx, cancel = context.WithTimeout(ctx, 2*time.Second)
+		promise = gcon.Run(ctx, host, withCancellation)
+
+		return
+	}
+
+	for _, host := range hostSet.Hosts {
+		promise, cancel := getPromise(host)
 		defer cancel()
-		runList = append(runList, gcon.Run(ctx, host, processHost))
+		runList = append(runList, promise)
 	}
 
 	// Go through the Run list, waiting for any that are not finished
@@ -250,82 +264,6 @@ func (hostSet *HostSet) Process(warnAtDays, timeout int) *CertDataSet {
 
 	return certDataSet
 }
-
-// Process process list of hosts and for each get back cert values
-// func (hostSet *HostSet) Process(warnAtDays, timeout int) *CertDataSet {
-// 	var (
-// 		wg           sync.WaitGroup        // waitgroup to wait for work completion
-// 		certDataChan = make(chan CertData) // channel for certificate values
-// 		certDataSet  = NewCertDataSet()
-// 		hostMap      = make(map[string]bool) // map of hosts to avoid duplicates
-// 	)
-
-// 	wg.Add(len(hostSet.Hosts))
-
-// 	// function to handle adding cert value data to the channel
-// 	processHosts := func(items []string) {
-// 		for _, item := range items {
-// 			host, port, err := getDomainAndPort(item)
-// 			hostAndPort := fmt.Sprintf("%s:%s", host, port)
-
-// 			// Skip if this is the same host/port combination
-// 			if hostMap[hostAndPort] {
-// 				// Decrement waitgroup if we are skipping goroutines
-// 				wg.Done()
-// 				continue
-// 			} else {
-// 				// Track that this host has come through
-// 				hostMap[hostAndPort] = true
-// 			}
-
-// 			if err != nil {
-// 				// Make an empty struct
-// 				go func(err error) {
-// 					sem.Acquire(semCtx, 1)
-// 					defer sem.Release(1)
-// 					// Decrement waitgroup at end of goroutine
-// 					defer wg.Done()
-// 					// This is fast so no need to use semaphore
-// 					certData := newCertData()
-// 					certData.HostError = true
-// 					certData.Message = err.Error()
-// 					certDataChan <- certData
-// 				}(err)
-// 			} else {
-// 				// Handle getting certdata and adding it to channel
-// 				go func(host, port string) {
-// 					// Decrement waitgroup at end of goroutine
-// 					defer wg.Done()
-// 					// Handle semaphore capacity limiting
-// 					sem.Acquire(semCtx, 1)
-// 					defer sem.Release(1)
-
-// 					// Add cert data for host to channel
-// 					certDataChan <- getCertData(host, port, warnAtDays, timeout)
-// 				}(host, port)
-// 			}
-// 		}
-// 	}
-// 	processHosts(hostSet.Hosts)
-
-// 	// Wait for WaitGroup to finish then close channel to allow range below to
-// 	// complete.
-// 	go func() {
-// 		wg.Wait()
-// 		// Close channel when done
-// 		close(certDataChan)
-// 	}()
-
-// 	// Add all cert values from channel to output list
-// 	// Range will block until the channel is closed.
-// 	for certData := range certDataChan {
-// 		certDataSet.CertData = append(certDataSet.CertData, certData)
-// 	}
-
-// 	certDataSet.finalize() // Produce summary values and sort
-
-// 	return certDataSet
-// }
 
 // Extract host and port from incoming host string
 func getDomainAndPort(input string) (host string, port string, err error) {
