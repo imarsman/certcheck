@@ -66,12 +66,12 @@ func (p *Promise[V]) Wait() error {
 }
 
 // Wait wait for a group of same type promises to complete
-func Wait[V any](pList ...*Promise[V]) error {
+func Wait[V any](promises ...*Promise[V]) error {
 	var wg sync.WaitGroup
-	wg.Add(len(pList))
-	errChan := make(chan error, len(pList))
+	wg.Add(len(promises))
+	errChan := make(chan error, len(promises))
 	done := make(chan struct{})
-	for _, p := range pList {
+	for _, p := range promises {
 		go func(p Promise[V]) {
 			defer wg.Done()
 			err := p.Wait()
@@ -146,19 +146,19 @@ func WithCancellation[T, V any](f Func[T, V]) Func[T, V] {
 // Promise returns a non-nil error, the error is propagated to the returned Promise and the passed-in Func is not run.
 func Then[T, V any](ctx context.Context, p *Promise[T], f Func[T, V]) *Promise[V] {
 	done := make(chan struct{})
-	out := Promise[V]{
+	promise := Promise[V]{
 		done: done,
 	}
 	go func() {
 		defer close(done)
 		val, err := p.Get()
 		if err != nil {
-			out.err = err
+			promise.err = err
 			return
 		}
 		val2, err := f(ctx, val)
-		out.val = val2
-		out.err = err
+		promise.val = val2
+		promise.err = err
 	}()
-	return &out
+	return &promise
 }
