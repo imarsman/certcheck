@@ -231,23 +231,18 @@ func (hostSet *HostSet) Process(warnAtDays, timeout int) *CertDataSet {
 	// Make a list of promises and let them start running
 	var runList = []*gcon.Promise[CertData]{}
 
-	var getPromise = func(host string) (promise *gcon.Promise[CertData], cancel context.CancelFunc) {
+	for _, host := range hostSet.Hosts {
 		sem.Acquire(context.Background(), 1)
-		defer sem.Release(1)
-		// WithCancellation will handle the context cancel
-		withCancellation := gcon.WithCancellation(processHost)
 
 		ctx := context.Background()
-		ctx, cancel = context.WithTimeout(ctx, 2*time.Second)
-		promise = gcon.Run(ctx, host, withCancellation)
-
-		return
-	}
-
-	for _, host := range hostSet.Hosts {
-		promise, cancel := getPromise(host)
+		ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 		defer cancel()
+
+		// cancellation is handled to set error and default null value
+		withCancellation := gcon.WithCancellation(processHost)
+		promise := gcon.Run(ctx, host, withCancellation)
 		runList = append(runList, promise)
+		sem.Release(1)
 	}
 
 	// Go through the Run list, waiting for any that are not finished
