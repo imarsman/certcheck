@@ -191,17 +191,19 @@ func (hostSet *HostSet) Process(warnAtDays, timeout int) *CertDataSet {
 	)
 
 	processHost := func(ctx context.Context, item string) (certData CertData, err error) {
+		sem.Acquire(context.Background(), 1)
+		defer sem.Release(1)
 		host, port, err := getDomainAndPort(item)
 		hostAndPort := fmt.Sprintf("%s:%s", host, port)
 
 		var foundHostAndPort = func(string) (found bool) {
-			mu.Lock()
-			defer mu.Unlock()
-
 			if hostMap[hostAndPort] {
 				found = true
 				return
 			}
+			mu.Lock()
+			defer mu.Unlock()
+			found = false
 			hostMap[hostAndPort] = true
 
 			return
