@@ -197,12 +197,13 @@ func (hostSet *HostSet) Process(warnAtDays, timeout int) *CertDataSet {
 		hostAndPort := fmt.Sprintf("%s:%s", host, port)
 
 		var foundHostAndPort = func(string) (found bool) {
+			mu.Lock()
+			defer mu.Unlock()
+
 			if hostMap[hostAndPort] {
 				found = true
 				return
 			}
-			mu.Lock()
-			defer mu.Unlock()
 			found = false
 			hostMap[hostAndPort] = true
 
