@@ -177,8 +177,7 @@ func NewHostSet() *HostSet {
 
 // Semaphore is for all requests to Process
 var (
-	sem    = semaphore.NewWeighted(int64(6)) // Set semaphore with capacity
-	semCtx = context.Background()            // ctx for semaphore
+	semCtx = context.Background() // ctx for semaphore
 )
 
 var mu = new(sync.Mutex)
@@ -189,6 +188,8 @@ func (hostSet *HostSet) Process(warnAtDays, timeout int) *CertDataSet {
 		certDataSet = NewCertDataSet()
 		hostMap     = make(map[string]bool) // map of hosts to avoid duplicates
 	)
+
+	var sem = semaphore.NewWeighted(int64(6)) // Set semaphore with capacity
 
 	processHost := func(ctx context.Context, item string) (certData CertData, err error) {
 		sem.Acquire(context.Background(), 1)
