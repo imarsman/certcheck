@@ -308,7 +308,7 @@ func getCertData(host, port string, warnAtDays int, timeout int) CertData {
 	certData.WarnAtDays = warnAtDays
 	hostAndPort := fmt.Sprintf("%s:%s", host, port)
 
-	warnIf := warnAtDays * 24 * int(time.Hour)
+	warnAt := warnAtDays * 24 * int(time.Hour)
 
 	dialer := &net.Dialer{Timeout: time.Duration(timeout) * time.Second}
 
@@ -363,7 +363,7 @@ func getCertData(host, port string, warnAtDays int, timeout int) CertData {
 	certData.CheckTime = time.Now().Format(timeFormat) // set time cert was checked
 
 	// Set expiry flag and fetch time
-	expired := (time.Now().Add(time.Duration(warnIf)).UnixNano() > notAfter.UnixNano())
+	expired := (time.Now().Add(time.Duration(warnAt)).UnixNano() > notAfter.UnixNano())
 	certData.ExpiryWarning = expired
 	certData.FetchTime = time.Since(tRun).Round(time.Millisecond).String()
 
