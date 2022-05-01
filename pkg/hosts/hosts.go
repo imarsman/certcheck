@@ -235,6 +235,7 @@ func (hostSet *HostSet) Process2(warnAtDays, timeout int) *CertDataSet {
 	for _, p := range runList {
 		v, err := p.Get()
 		if err != nil {
+			// Duplicate hosts return an error but it is ok to just continue
 			continue
 		}
 		certDataSet.CertData = append(certDataSet.CertData, v)
