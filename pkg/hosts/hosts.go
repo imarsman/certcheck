@@ -195,6 +195,13 @@ func (hostSet *HostSet) Process(warnAtDays, timeout int) *CertDataSet {
 		sem.Acquire(context.Background(), 1)
 		defer sem.Release(1)
 		host, port, err := getDomainAndPort(item)
+		if err != nil {
+			certData = newCertData()
+			certData.HostError = true
+			certData.Message = err.Error()
+
+			return
+		}
 		hostAndPort := fmt.Sprintf("%s:%s", host, port)
 
 		var foundHostAndPort = func(string) (found bool) {
@@ -213,6 +220,8 @@ func (hostSet *HostSet) Process(warnAtDays, timeout int) *CertDataSet {
 
 		if foundHostAndPort(hostAndPort) {
 			err = errors.New("already processed " + item)
+			certData = CertData{}
+
 			return
 		}
 
@@ -220,14 +229,11 @@ func (hostSet *HostSet) Process(warnAtDays, timeout int) *CertDataSet {
 			certData = newCertData()
 			certData.HostError = true
 			certData.Message = err.Error()
-		} else {
-			// Add cert data for host to channel
-			certData = getCertData(host, port, warnAtDays, timeout)
+
+			return
 		}
-		// Set error to context error
-		if ctx.Err() != nil {
-			err = ctx.Err()
-		}
+		// Add cert data for host to channel
+		certData = getCertData(host, port, warnAtDays, timeout)
 
 		return
 	}
