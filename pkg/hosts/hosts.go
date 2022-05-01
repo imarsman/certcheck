@@ -194,7 +194,7 @@ func (hostSet *HostSet) Process(warnAtDays, timeout int) *CertDataSet {
 	processHost := func(ctx context.Context, item string) (certData CertData, err error) {
 		sem.Acquire(context.Background(), 1)
 		defer sem.Release(1)
-		host, port, err := getDomainAndPort(item)
+		host, port, err := domainAndPort(item)
 		if err != nil {
 			certData = newCertData()
 			certData.HostError = true
@@ -212,7 +212,6 @@ func (hostSet *HostSet) Process(warnAtDays, timeout int) *CertDataSet {
 				found = true
 				return
 			}
-			found = false
 			hostMap[hostAndPort] = true
 
 			return
@@ -268,7 +267,7 @@ func (hostSet *HostSet) Process(warnAtDays, timeout int) *CertDataSet {
 }
 
 // Extract host and port from incoming host string
-func getDomainAndPort(input string) (host string, port string, err error) {
+func domainAndPort(input string) (host string, port string, err error) {
 	if strings.Contains(input, ":") {
 		parts := strings.Split(input, ":")
 		if len(parts) == 1 {
