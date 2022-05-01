@@ -30,7 +30,7 @@ func TestGetCertData(t *testing.T) {
 
 	t.Logf("%+v", certData)
 
-	certData = getCertData("gooble.com", port, 30, 2)
+	certData = getCertData("goobbble.com", port, 30, 2)
 	t.Logf("%+v", certData)
 	is.True(certData.HostError == true)
 
