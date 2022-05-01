@@ -183,8 +183,8 @@ var (
 
 var mu = new(sync.Mutex)
 
-// Process2 process list of hosts and for each get back cert values
-func (hostSet *HostSet) Process2(warnAtDays, timeout int) *CertDataSet {
+// Process process list of hosts and for each get back cert values
+func (hostSet *HostSet) Process(warnAtDays, timeout int) *CertDataSet {
 	var (
 		certDataSet = NewCertDataSet()
 		hostMap     = make(map[string]bool) // map of hosts to avoid duplicates
@@ -229,11 +229,11 @@ func (hostSet *HostSet) Process2(warnAtDays, timeout int) *CertDataSet {
 
 	// Make a list of promises and let them start running
 	var runList = []*gcon.Promise[CertData]{}
-	for _, v := range hostSet.Hosts {
+	for _, host := range hostSet.Hosts {
 		ctx := context.Background()
 		ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
 		defer cancel()
-		runList = append(runList, gcon.Run(ctx, v, processHost))
+		runList = append(runList, gcon.Run(ctx, host, processHost))
 	}
 
 	// Go through the Run list, waiting for any that are not finished
@@ -252,80 +252,80 @@ func (hostSet *HostSet) Process2(warnAtDays, timeout int) *CertDataSet {
 }
 
 // Process process list of hosts and for each get back cert values
-func (hostSet *HostSet) Process(warnAtDays, timeout int) *CertDataSet {
-	var (
-		wg           sync.WaitGroup        // waitgroup to wait for work completion
-		certDataChan = make(chan CertData) // channel for certificate values
-		certDataSet  = NewCertDataSet()
-		hostMap      = make(map[string]bool) // map of hosts to avoid duplicates
-	)
+// func (hostSet *HostSet) Process(warnAtDays, timeout int) *CertDataSet {
+// 	var (
+// 		wg           sync.WaitGroup        // waitgroup to wait for work completion
+// 		certDataChan = make(chan CertData) // channel for certificate values
+// 		certDataSet  = NewCertDataSet()
+// 		hostMap      = make(map[string]bool) // map of hosts to avoid duplicates
+// 	)
 
-	wg.Add(len(hostSet.Hosts))
+// 	wg.Add(len(hostSet.Hosts))
 
-	// function to handle adding cert value data to the channel
-	processHosts := func(items []string) {
-		for _, item := range items {
-			host, port, err := getDomainAndPort(item)
-			hostAndPort := fmt.Sprintf("%s:%s", host, port)
+// 	// function to handle adding cert value data to the channel
+// 	processHosts := func(items []string) {
+// 		for _, item := range items {
+// 			host, port, err := getDomainAndPort(item)
+// 			hostAndPort := fmt.Sprintf("%s:%s", host, port)
 
-			// Skip if this is the same host/port combination
-			if hostMap[hostAndPort] {
-				// Decrement waitgroup if we are skipping goroutines
-				wg.Done()
-				continue
-			} else {
-				// Track that this host has come through
-				hostMap[hostAndPort] = true
-			}
+// 			// Skip if this is the same host/port combination
+// 			if hostMap[hostAndPort] {
+// 				// Decrement waitgroup if we are skipping goroutines
+// 				wg.Done()
+// 				continue
+// 			} else {
+// 				// Track that this host has come through
+// 				hostMap[hostAndPort] = true
+// 			}
 
-			if err != nil {
-				// Make an empty struct
-				go func(err error) {
-					sem.Acquire(semCtx, 1)
-					defer sem.Release(1)
-					// Decrement waitgroup at end of goroutine
-					defer wg.Done()
-					// This is fast so no need to use semaphore
-					certData := newCertData()
-					certData.HostError = true
-					certData.Message = err.Error()
-					certDataChan <- certData
-				}(err)
-			} else {
-				// Handle getting certdata and adding it to channel
-				go func(host, port string) {
-					// Decrement waitgroup at end of goroutine
-					defer wg.Done()
-					// Handle semaphore capacity limiting
-					sem.Acquire(semCtx, 1)
-					defer sem.Release(1)
+// 			if err != nil {
+// 				// Make an empty struct
+// 				go func(err error) {
+// 					sem.Acquire(semCtx, 1)
+// 					defer sem.Release(1)
+// 					// Decrement waitgroup at end of goroutine
+// 					defer wg.Done()
+// 					// This is fast so no need to use semaphore
+// 					certData := newCertData()
+// 					certData.HostError = true
+// 					certData.Message = err.Error()
+// 					certDataChan <- certData
+// 				}(err)
+// 			} else {
+// 				// Handle getting certdata and adding it to channel
+// 				go func(host, port string) {
+// 					// Decrement waitgroup at end of goroutine
+// 					defer wg.Done()
+// 					// Handle semaphore capacity limiting
+// 					sem.Acquire(semCtx, 1)
+// 					defer sem.Release(1)
 
-					// Add cert data for host to channel
-					certDataChan <- getCertData(host, port, warnAtDays, timeout)
-				}(host, port)
-			}
-		}
-	}
-	processHosts(hostSet.Hosts)
+// 					// Add cert data for host to channel
+// 					certDataChan <- getCertData(host, port, warnAtDays, timeout)
+// 				}(host, port)
+// 			}
+// 		}
+// 	}
+// 	processHosts(hostSet.Hosts)
 
-	// Wait for WaitGroup to finish then close channel to allow range below to
-	// complete.
-	go func() {
-		wg.Wait()
-		// Close channel when done
-		close(certDataChan)
-	}()
+// 	// Wait for WaitGroup to finish then close channel to allow range below to
+// 	// complete.
+// 	go func() {
+// 		wg.Wait()
+// 		// Close channel when done
+// 		close(certDataChan)
+// 	}()
 
-	// Add all cert values from channel to output list
-	// Range will block until the channel is closed.
-	for certData := range certDataChan {
-		certDataSet.CertData = append(certDataSet.CertData, certData)
-	}
+// 	// Add all cert values from channel to output list
+// 	// Range will block until the channel is closed.
+// 	for certData := range certDataChan {
+// 		certDataSet.CertData = append(certDataSet.CertData, certData)
+// 	}
 
-	certDataSet.finalize() // Produce summary values and sort
+// 	certDataSet.finalize() // Produce summary values and sort
 
-	return certDataSet
-}
+// 	return certDataSet
+// }
 
 // Extract host and port from incoming host string
 func getDomainAndPort(input string) (host string, port string, err error) {
