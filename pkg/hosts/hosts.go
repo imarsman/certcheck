@@ -16,6 +16,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/imarsman/gcon"
 	"golang.org/x/sync/semaphore"
 	"gopkg.in/yaml.v2"
 )
@@ -24,6 +25,41 @@ const (
 	timeFormat     = "2006-01-02T15:04:05Z"
 	tlsDefaultPort = "443"
 )
+
+// func check() {
+// 	const rootPEM = `
+// -----BEGIN CERTIFICATE-----
+// MIIEBDCCAuygAwIBAgIDAjppMA0GCSqGSIb3DQEBBQUAMEIxCzAJBgNVBAYTAlVT
+// MRYwFAYDVQQKEw1HZW9UcnVzdCBJbmMuMRswGQYDVQQDExJHZW9UcnVzdCBHbG9i
+// YWwgQ0EwHhcNMTMwNDA1MTUxNTU1WhcNMTUwNDA0MTUxNTU1WjBJMQswCQYDVQQG
+// EwJVUzETMBEGA1UEChMKR29vZ2xlIEluYzElMCMGA1UEAxMcR29vZ2xlIEludGVy
+// bmV0IEF1dGhvcml0eSBHMjCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEB
+// AJwqBHdc2FCROgajguDYUEi8iT/xGXAaiEZ+4I/F8YnOIe5a/mENtzJEiaB0C1NP
+// VaTOgmKV7utZX8bhBYASxF6UP7xbSDj0U/ck5vuR6RXEz/RTDfRK/J9U3n2+oGtv
+// h8DQUB8oMANA2ghzUWx//zo8pzcGjr1LEQTrfSTe5vn8MXH7lNVg8y5Kr0LSy+rE
+// ahqyzFPdFUuLH8gZYR/Nnag+YyuENWllhMgZxUYi+FOVvuOAShDGKuy6lyARxzmZ
+// EASg8GF6lSWMTlJ14rbtCMoU/M4iarNOz0YDl5cDfsCx3nuvRTPPuj5xt970JSXC
+// DTWJnZ37DhF5iR43xa+OcmkCAwEAAaOB+zCB+DAfBgNVHSMEGDAWgBTAephojYn7
+// qwVkDBF9qn1luMrMTjAdBgNVHQ4EFgQUSt0GFhu89mi1dvWBtrtiGrpagS8wEgYD
+// VR0TAQH/BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAQYwOgYDVR0fBDMwMTAvoC2g
+// K4YpaHR0cDovL2NybC5nZW90cnVzdC5jb20vY3Jscy9ndGdsb2JhbC5jcmwwPQYI
+// KwYBBQUHAQEEMTAvMC0GCCsGAQUFBzABhiFodHRwOi8vZ3RnbG9iYWwtb2NzcC5n
+// ZW90cnVzdC5jb20wFwYDVR0gBBAwDjAMBgorBgEEAdZ5AgUBMA0GCSqGSIb3DQEB
+// BQUAA4IBAQA21waAESetKhSbOHezI6B1WLuxfoNCunLaHtiONgaX4PCVOzf9G0JY
+// /iLIa704XtE7JW4S615ndkZAkNoUyHgN7ZVm2o6Gb4ChulYylYbc3GrKBIxbf/a/
+// zG+FA1jDaFETzf3I93k9mTXwVqO94FntT0QJo544evZG0R0SnU++0ED8Vf4GXjza
+// HFa9llF7b1cq26KqltyMdMKVvvBulRP/F/A8rLIQjcxz++iPAsbw+zOzlTvjwsto
+// WHPbqCRiOwY1nQ2pM714A5AuTHhdUDqB1O6gyHA43LL5Z/qHQF1hwFGPa4NrzQU6
+// yuGnBXj8ytqU0CwIPX4WecigUCAkVDNx
+// -----END CERTIFICATE-----`
+
+// 	block, _ := pem.Decode([]byte(rootPEM))
+// 	var cert *x509.Certificate
+// 	cert, _ = x509.ParseCertificate(block.Bytes)
+// 	rsaPublicKey := cert.PublicKey.(*rsa.PublicKey)
+// 	fmt.Println(rsaPublicKey.N)
+// 	fmt.Println(rsaPublicKey.E)
+// }
 
 // CertData values for a TLS certificate
 type CertData struct {
@@ -144,6 +180,68 @@ var (
 	sem    = semaphore.NewWeighted(int64(6)) // Set semaphore with capacity
 	semCtx = context.Background()            // ctx for semaphore
 )
+
+var mu = new(sync.Mutex)
+
+// Process2 process list of hosts and for each get back cert values
+func (hostSet *HostSet) Process2(warnAtDays, timeout int) *CertDataSet {
+	var (
+		certDataSet = NewCertDataSet()
+		hostMap     = make(map[string]bool) // map of hosts to avoid duplicates
+	)
+
+	processHost := func(ctx context.Context, item string) (certData CertData, err error) {
+		host, port, err := getDomainAndPort(item)
+		hostAndPort := fmt.Sprintf("%s:%s", host, port)
+
+		var foundHostAndPort = func(string) (found bool) {
+			mu.Lock()
+			defer mu.Unlock()
+
+			if hostMap[hostAndPort] {
+				found = true
+				return
+			}
+			hostMap[hostAndPort] = true
+
+			return
+		}
+
+		if foundHostAndPort(hostAndPort) {
+			return
+		}
+
+		if err != nil {
+			certData = newCertData()
+			certData.HostError = true
+			certData.Message = err.Error()
+		} else {
+			// Add cert data for host to channel
+			certData = getCertData(host, port, warnAtDays, timeout)
+		}
+
+		return
+	}
+
+	ctx := context.Background()
+
+	var runList = []*gcon.Promise[CertData]{}
+	for _, v := range hostSet.Hosts {
+		runList = append(runList, gcon.Run(ctx, v, processHost))
+	}
+
+	for _, p := range runList {
+		v, err := p.Get()
+		if err != nil {
+			fmt.Println(err)
+		}
+		certDataSet.CertData = append(certDataSet.CertData, v)
+	}
+
+	certDataSet.finalize() // Produce summary values and sort
+
+	return certDataSet
+}
 
 // Process process list of hosts and for each get back cert values
 func (hostSet *HostSet) Process(warnAtDays, timeout int) *CertDataSet {
