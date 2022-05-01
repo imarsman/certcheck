@@ -83,6 +83,14 @@ func main() {
 		hostDataSet.AddHosts(callArgs.Hosts...)
 	}
 
+	// Set minimum if below threshold
+	if callArgs.WarnAtDays < 1 {
+		callArgs.WarnAtDays = 30
+	}
+	// Set minimum if below threshold
+	if callArgs.Timeout < 1 {
+		callArgs.Timeout = 5
+	}
 	certDataSet = hostDataSet.Process(callArgs.WarnAtDays, callArgs.Timeout)
 
 	var bytes []byte
