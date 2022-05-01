@@ -27,22 +27,28 @@ main package, that code has been put in its own package at pkg/hosts.
 
 ## Help output
 
-`% certcheck -h`
 ```
-Usage: certcheck [--timeout TIMEOUT] [--warnatdays WARNAT] [--yaml] [--json] [HOSTS [HOSTS ...]]
-
-Positional arguments:
-  HOSTS                  host:port list to check
+$ certcheck -h
+Usage: certcheck [--hosts HOSTS] [--timeout TIMEOUT] [--warn-at-days WARNAT] [--yaml] [--json]
 
 Options:
+  --hosts HOSTS, -H HOSTS
+                         host:port list to check
   --timeout TIMEOUT, -t TIMEOUT
                          connection timeout seconds [default: 10]
-  --warnatdays WARNAT, -w WARNAT
+  --warn-at-days WARNAT, -w WARNAT
                          warn if expiry before days [default: 30]
   --yaml, -y             display output as YAML
   --json, -j             display output as JSON (default)
   --help, -h             display this help and exit
 ```
+
+## Completion
+
+`certcheck` uses completion using the [posener](https://github.com/posener/complete/tree/master) library. To activate
+it, once `certcheck` is in your path, type `COMP_INSTALL=1 certcheck`. You will be asked to confirm that you wish to
+have completion support added to your shell config. After running this you will need to refresh your terminal session or
+start a new one. If you use `zsh` your `.zshrc` fill will contain `complete -o nospace -C /path/to/certcheck certcheck`.
 
 ## Examples
 

@@ -11,5 +11,9 @@ require (
 
 require (
 	github.com/alexflint/go-scalar v1.0.0 // indirect
+	github.com/hashicorp/errwrap v1.0.0 // indirect
+	github.com/hashicorp/go-multierror v1.0.0 // indirect
 	github.com/imarsman/gcon v0.1.3 // indirect
+	github.com/posener/complete/v2 v2.0.1-alpha.13 // indirect
+	github.com/posener/script v1.1.5 // indirect
 )

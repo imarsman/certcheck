@@ -230,6 +230,7 @@ func (hostSet *HostSet) Process2(warnAtDays, timeout int) *CertDataSet {
 		runList = append(runList, gcon.Run(ctx, v, processHost))
 	}
 
+	// Go through the Run list, waiting for any that are not finished
 	for _, p := range runList {
 		v, err := p.Get()
 		if err != nil {

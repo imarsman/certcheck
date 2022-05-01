@@ -11,19 +11,33 @@ import (
 
 	"github.com/alexflint/go-arg"
 	"github.com/imarsman/certcheck/pkg/hosts"
+	"github.com/posener/complete/v2"
+	"github.com/posener/complete/v2/predict"
 )
 
 // args CLI args
 type args struct {
-	Hosts      []string `arg:"positional" help:"host:port list to check"`
-	Timeout    int      `arg:"-t" default:"10" help:"connection timeout seconds"`
-	WarnAtDays int      `arg:"-w" placeholder:"WARNAT" default:"30" help:"warn if expiry before days"`
-	YAML       bool     `arg:"-y" help:"display output as YAML"`
-	JSON       bool     `arg:"-j" help:"display output as JSON (default)"`
+	Hosts      []string `arg:"-H,--hosts" help:"host:port list to check"`
+	Timeout    int      `arg:"-t,--timeout" default:"10" help:"connection timeout seconds"`
+	WarnAtDays int      `arg:"-w,--warn-at-days" placeholder:"WARNAT" default:"30" help:"warn if expiry before days"`
+	YAML       bool     `arg:"-y,--yaml" help:"display output as YAML"`
+	JSON       bool     `arg:"-j,--json" help:"display output as JSON (default)"`
 }
 
 // Entry point for app
 func main() {
+	cmd := &complete.Command{
+		Flags: map[string]complete.Predictor{
+			"hosts":        predict.Nothing,
+			"timeout":      predict.Nothing,
+			"warn-at-days": predict.Nothing,
+			"yaml":         predict.Nothing,
+			"json":         predict.Nothing,
+		},
+	}
+
+	cmd.Complete("certcheck")
+
 	var callArgs args // initialize call args structure
 	arg.MustParse(&callArgs)
 
