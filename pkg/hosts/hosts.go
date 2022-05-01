@@ -208,6 +208,7 @@ func (hostSet *HostSet) Process2(warnAtDays, timeout int) *CertDataSet {
 		}
 
 		if foundHostAndPort(hostAndPort) {
+			err = errors.New("already processed " + item)
 			return
 		}
 
@@ -234,7 +235,7 @@ func (hostSet *HostSet) Process2(warnAtDays, timeout int) *CertDataSet {
 	for _, p := range runList {
 		v, err := p.Get()
 		if err != nil {
-			fmt.Println(err)
+			continue
 		}
 		certDataSet.CertData = append(certDataSet.CertData, v)
 	}
