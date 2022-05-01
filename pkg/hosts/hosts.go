@@ -26,6 +26,7 @@ const (
 	tlsDefaultPort = "443"
 )
 
+// For if file-based check makes sense
 // func check() {
 // 	const rootPEM = `
 // -----BEGIN CERTIFICATE-----
