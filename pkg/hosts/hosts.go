@@ -360,7 +360,7 @@ func getCertData(host, port string, warnAtDays int, timeout int) CertData {
 	certData.TotalDays = int((notAfter.UnixNano() - notBefore.UnixNano()) / int64(time.Hour*24))
 
 	certData.Message = "OK"
-	certData.CheckTime = time.Now().Format(timeFormat) // set time cert was checked
+	certData.CheckTime = now.Format(timeFormat) // set time cert was checked
 
 	// Set expiry flag and fetch time
 	expired := (time.Now().Add(time.Duration(warnAt)).UnixNano() > notAfter.UnixNano())
