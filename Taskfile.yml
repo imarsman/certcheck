@@ -31,11 +31,12 @@ tasks:
       - go build -o ../../build/{{.buildname}} .
   test:
     desc: test app
-    dir: build
+    dir: .
     cmds:
+      - task: install
       - go clean -testcache
       - deps: build
-      - go test -v ../...
+      - go test -v ./...
   run:
     desc: run from cli
     dir: build
