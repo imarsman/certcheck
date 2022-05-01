@@ -220,14 +220,18 @@ func (hostSet *HostSet) Process2(warnAtDays, timeout int) *CertDataSet {
 			// Add cert data for host to channel
 			certData = getCertData(host, port, warnAtDays, timeout)
 		}
+		if ctx.Err() != nil {
+			err = ctx.Err()
+		}
 
 		return
 	}
 
-	ctx := context.Background()
-
 	var runList = []*gcon.Promise[CertData]{}
 	for _, v := range hostSet.Hosts {
+		ctx := context.Background()
+		ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
+		defer cancel()
 		runList = append(runList, gcon.Run(ctx, v, processHost))
 	}
 
