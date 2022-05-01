@@ -83,7 +83,7 @@ func main() {
 		hostDataSet.AddHosts(callArgs.Hosts...)
 	}
 
-	certDataSet = hostDataSet.Process2(callArgs.WarnAtDays, callArgs.Timeout)
+	certDataSet = hostDataSet.Process(callArgs.WarnAtDays, callArgs.Timeout)
 
 	var bytes []byte
 	var err error
