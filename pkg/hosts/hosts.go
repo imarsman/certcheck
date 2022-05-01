@@ -16,7 +16,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/imarsman/gcon"
+	"github.com/imarsman/certcheck/pkg/gcon"
 	"golang.org/x/sync/semaphore"
 	"gopkg.in/yaml.v2"
 )
@@ -227,6 +227,7 @@ func (hostSet *HostSet) Process2(warnAtDays, timeout int) *CertDataSet {
 		return
 	}
 
+	// Make a list of promises and let them start running
 	var runList = []*gcon.Promise[CertData]{}
 	for _, v := range hostSet.Hosts {
 		ctx := context.Background()
