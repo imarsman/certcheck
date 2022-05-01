@@ -33,7 +33,6 @@ tasks:
     desc: test app
     dir: .
     cmds:
-      - task: install
       - go clean -testcache
       - deps: build
       - go test -v ./...
