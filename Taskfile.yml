@@ -3,7 +3,7 @@ version: "3"
 vars:
   hostList: >
     ibm.com bbc.com amazon.com microsoft.com cisco.com workday.com o.canada.com
-    www.thespec.com www.thestar.com www.parliament.gov.za www.gov.za oracle.com:27
+    www.thespec.com www.thestar.com www.parliament.gov.za www.gov.za oracle.com:27 unknowndomain.cob
   targetbin: ~/bin
   buildname: certcheck
   dir: >
