@@ -361,6 +361,7 @@ func (hostSet *HostSet) Process(warnAtDays, timeout int) *CertDataSet {
 
 	for _, host := range hostSet.Hosts {
 		ctx := context.Background()
+		// Set timeout for run of host TLS information gathering
 		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		defer cancel()
 
@@ -375,7 +376,7 @@ func (hostSet *HostSet) Process(warnAtDays, timeout int) *CertDataSet {
 		certData, err := p.Get()
 		// If there is an error make a minimal error result
 		if err != nil {
-			// Use host information from hostSet
+			// Use host information from hostSet as the two slices should be ordered identically
 			host := hostSet.Hosts[i]
 			certData = newCertData()
 			certData.Host = host
