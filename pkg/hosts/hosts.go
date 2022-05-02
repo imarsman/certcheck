@@ -293,14 +293,11 @@ func (hostSet *HostSet) Process(warnAtDays, timeout int) *CertDataSet {
 	var (
 		certDataSet = NewCertDataSet()
 		hostMap     = make(map[string]bool) // map of hosts to avoid duplicates
-		wg          = new(sync.WaitGroup)
 	)
 
-	wg.Add(len(hostSet.Hosts))
 	var sem = semaphore.NewWeighted(int64(6)) // Set semaphore with capacity
 
 	processHost := func(ctx context.Context, item string) (certData CertData, err error) {
-		defer wg.Done()
 		sem.Acquire(context.Background(), 1)
 		defer sem.Release(1)
 		host, port, err := domainAndPort(item)
@@ -373,10 +370,7 @@ func (hostSet *HostSet) Process(warnAtDays, timeout int) *CertDataSet {
 		runList = append(runList, promise)
 	}
 
-	gcon.Wait(runList...)
-	wg.Wait()
-
-	// Go through the Run list, waiting for any that are not finished
+	// Go through the Run list, waiting for all that are not finished
 	for i, p := range runList {
 		certData, err := p.Get()
 		// If there is an error make a minimal error result
