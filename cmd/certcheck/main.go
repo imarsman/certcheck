@@ -48,7 +48,7 @@ func main() {
 	stat, _ := os.Stdin.Stat()
 	// var hostsToCheck []string
 
-	var hostDataSet = hosts.NewHostSet()
+	var hostSet = hosts.NewHostSet()
 	if (stat.Mode() & os.ModeCharDevice) == 0 {
 
 		var scanner = bufio.NewScanner(os.Stdin)
@@ -73,14 +73,14 @@ func main() {
 					if part == "" {
 						continue
 					}
-					hostDataSet.AddHosts(part)
+					hostSet.Add(part)
 				}
 			} else {
-				hostDataSet.AddHosts(strings.TrimSpace(host))
+				hostSet.Add(strings.TrimSpace(host))
 			}
 		}
 	} else {
-		hostDataSet.AddHosts(callArgs.Hosts...)
+		hostSet.Add(callArgs.Hosts...)
 	}
 
 	// Set minimum if below threshold
@@ -91,7 +91,7 @@ func main() {
 	if callArgs.Timeout < 1 {
 		callArgs.Timeout = 5
 	}
-	certDataSet = hostDataSet.Process(callArgs.WarnAtDays, callArgs.Timeout)
+	certDataSet = hostSet.Process(callArgs.WarnAtDays, callArgs.Timeout)
 
 	var bytes []byte
 	var err error

@@ -164,8 +164,8 @@ type HostSet struct {
 	Hosts []string
 }
 
-// AddHosts add hosts to HostDataSet
-func (hostSet *HostSet) AddHosts(items ...string) {
+// Add add hosts to HostDataSet
+func (hostSet *HostSet) Add(items ...string) {
 	hostSet.Hosts = append(hostSet.Hosts, items...)
 }
 
@@ -180,92 +180,6 @@ func NewHostSet() *HostSet {
 var (
 	semCtx = context.Background() // ctx for semaphore
 )
-
-var mu = new(sync.Mutex)
-
-// Process process list of hosts and for each get back cert values
-func (hostSet *HostSet) Process(warnAtDays, timeout int) *CertDataSet {
-	var (
-		certDataSet = NewCertDataSet()
-		hostMap     = make(map[string]bool) // map of hosts to avoid duplicates
-	)
-
-	var sem = semaphore.NewWeighted(int64(6)) // Set semaphore with capacity
-
-	processHost := func(ctx context.Context, item string) (certData CertData, err error) {
-		sem.Acquire(context.Background(), 1)
-		defer sem.Release(1)
-		host, port, err := domainAndPort(item)
-		if err != nil {
-			certData = newCertData()
-			certData.HostError = true
-			certData.Message = err.Error()
-
-			return
-		}
-		hostAndPort := fmt.Sprintf("%s:%s", host, port)
-
-		var foundHostAndPort = func(string) (found bool) {
-			mu.Lock()
-			defer mu.Unlock()
-
-			if hostMap[hostAndPort] {
-				found = true
-				return
-			}
-			hostMap[hostAndPort] = true
-
-			return
-		}
-
-		if foundHostAndPort(hostAndPort) {
-			err = errors.New("already processed " + item)
-			certData = CertData{}
-
-			return
-		}
-
-		if err != nil {
-			certData = newCertData()
-			certData.HostError = true
-			certData.Message = err.Error()
-
-			return
-		}
-		// Add cert data for host to channel
-		certData = getCertData(host, port, warnAtDays, timeout)
-
-		return
-	}
-
-	// Make a list of promises and let them start running
-	var runList = []*gcon.Promise[CertData]{}
-
-	for _, host := range hostSet.Hosts {
-		ctx := context.Background()
-		ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
-		defer cancel()
-
-		// cancellation is handled to set error and default null value
-		withCancellation := gcon.WithCancellation(processHost)
-		promise := gcon.Run(ctx, host, withCancellation)
-		runList = append(runList, promise)
-	}
-
-	// Go through the Run list, waiting for any that are not finished
-	for _, p := range runList {
-		v, err := p.Get()
-		if err != nil {
-			// Duplicate hosts return an error but it is ok to just continue
-			continue
-		}
-		certDataSet.CertData = append(certDataSet.CertData, v)
-	}
-
-	certDataSet.finalize() // Produce summary values and sort
-
-	return certDataSet
-}
 
 // Extract host and port from incoming host string
 func domainAndPort(input string) (host string, port string, err error) {
@@ -298,10 +212,10 @@ func domainAndPort(input string) (host string, port string, err error) {
 }
 
 // Do check of cert from remote host and populate CertData
-func getCertData(host, port string, warnAtDays int, timeout int) CertData {
+func getCertData(host, port string, warnAtDays int, timeout int) (certData CertData, err error) {
 	tRun := time.Now()
 
-	certData := newCertData()
+	certData = newCertData()
 	certData.Host = host
 	certData.Port = port
 	certData.HostError = false
@@ -318,10 +232,11 @@ func getCertData(host, port string, warnAtDays int, timeout int) CertData {
 		hostAndPort, nil)
 	if err != nil {
 		certData.HostError = true
-		certData.Message = fmt.Sprintf("Server doesn't support TLS certificate err: %s" + err.Error())
+		certData.Message = fmt.Sprintf("Server doesn't support TLS certificate err: %s", err.Error())
 		certData.FetchTime = time.Since(tRun).String()
+		err = nil
 
-		return certData
+		return
 	}
 
 	err = conn.VerifyHostname(host)
@@ -329,8 +244,9 @@ func getCertData(host, port string, warnAtDays int, timeout int) CertData {
 		certData.HostError = true
 		certData.Message = fmt.Sprintf("Hostname doesn't match with certificate: %s" + err.Error())
 		certData.FetchTime = time.Since(tRun).String()
+		err = nil
 
-		return certData
+		return
 	}
 	certData.HostError = false
 
@@ -367,5 +283,115 @@ func getCertData(host, port string, warnAtDays int, timeout int) CertData {
 	certData.ExpiryWarning = expired
 	certData.FetchTime = time.Since(tRun).Round(time.Millisecond).String()
 
-	return certData
+	return
+}
+
+var mu = new(sync.Mutex)
+
+// Process process list of hosts and for each get back cert values
+func (hostSet *HostSet) Process(warnAtDays, timeout int) *CertDataSet {
+	var (
+		certDataSet = NewCertDataSet()
+		hostMap     = make(map[string]bool) // map of hosts to avoid duplicates
+		wg          = new(sync.WaitGroup)
+	)
+
+	wg.Add(len(hostSet.Hosts))
+	var sem = semaphore.NewWeighted(int64(6)) // Set semaphore with capacity
+
+	processHost := func(ctx context.Context, item string) (certData CertData, err error) {
+		defer wg.Done()
+		sem.Acquire(context.Background(), 1)
+		defer sem.Release(1)
+		host, port, err := domainAndPort(item)
+		if err != nil {
+			certData = newCertData()
+			certData.HostError = true
+			certData.Message = err.Error()
+
+			return
+		}
+		hostAndPort := fmt.Sprintf("%s:%s", host, port)
+
+		var foundHostAndPort = func(string) (found bool) {
+			mu.Lock()
+			defer mu.Unlock()
+
+			if hostMap[hostAndPort] {
+				found = true
+				return
+			}
+			hostMap[hostAndPort] = true
+
+			return
+		}
+
+		if foundHostAndPort(hostAndPort) {
+			err = errors.New("already processed " + item)
+			certData = CertData{}
+
+			return
+		}
+
+		if err != nil {
+			certData = newCertData()
+			certData.Host = host
+			certData.HostError = true
+			certData.Message = err.Error()
+
+			return
+		}
+		// Add cert data for host to channel
+		certData, err = getCertData(host, port, warnAtDays, timeout)
+		if err != nil {
+			// fmt.Println(err)
+		}
+
+		select {
+		case <-ctx.Done():
+			certData = newCertData()
+			certData.HostError = true
+			certData.Message = fmt.Sprintf("context for %s done", host)
+			return
+		default:
+		}
+
+		return
+	}
+
+	// Make a list of promises and let them start running
+	var runList = []*gcon.Promise[CertData]{}
+
+	for _, host := range hostSet.Hosts {
+		ctx := context.Background()
+		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		defer cancel()
+
+		// cancellation is handled to set error and default null value
+		withCancellation := gcon.WithCancellation(processHost)
+		promise := gcon.Run(ctx, host, withCancellation)
+		runList = append(runList, promise)
+	}
+
+	gcon.Wait(runList...)
+	wg.Wait()
+
+	// Go through the Run list, waiting for any that are not finished
+	for i, p := range runList {
+		certData, err := p.Get()
+		// If there is an error make a minimal error result
+		if err != nil {
+			// Use host information from hostSet
+			host := hostSet.Hosts[i]
+			certData = newCertData()
+			certData.Host = host
+			certData.HostError = true
+			certData.Message = err.Error()
+		}
+		certDataSet.CertData = append(certDataSet.CertData, certData)
+	}
+
+	certDataSet.finalize() // Produce summary values and sort
+
+	return certDataSet
 }

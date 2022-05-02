@@ -3,7 +3,7 @@ version: "3"
 vars:
   hostList: >
     ibm.com bbc.com amazon.com microsoft.com cisco.com workday.com o.canada.com
-    www.thespec.com www.thestar.com www.parliament.gov.za www.gov.za
+    www.thespec.com www.thestar.com www.parliament.gov.za www.gov.za oracle.com:27
   targetbin: ~/bin
   buildname: certcheck
   dir: >
@@ -41,7 +41,7 @@ tasks:
     dir: build
     cmds:
       - deps: build
-      - time echo "{{.hostList}}" | ./{{.buildname}} -y
+      - time echo "{{.hostList}}" | ./{{.buildname}} -j
   makemarkdoc:
     desc: generate markdown code documentation
     dir: .
