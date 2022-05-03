@@ -187,6 +187,25 @@ func WithCancellation[T, V any](f Func[T, V]) Func[T, V] {
 	}
 }
 
+// func (pr *Promise[T]) Then[V any(ctx context.Context, p *Promise[T], f Func[T, V]) *Promise[V] {
+// 	done := make(chan struct{})
+// 	promise := Promise[V]{
+// 		done: done,
+// 	}
+// 	go func() {
+// 		defer close(done)
+// 		val, err := p.Get()
+// 		if err != nil {
+// 			promise.err = err
+// 			return
+// 		}
+// 		val2, err := f(ctx, val)
+// 		promise.val = val2
+// 		promise.err = err
+// 	}()
+// 	return &promise
+// }
+
 // Then produces a Promise for the supplied Func, evaluating the supplied context.Context and Promise. The returned
 // Promise is returned immediately, no matter how long it takes for the Func to complete processing. If the supplied
 // Promise returns a non-nil error, the error is propagated to the returned Promise and the passed-in Func is not run.
@@ -206,5 +225,40 @@ func Then[T, V any](ctx context.Context, p *Promise[T], f Func[T, V]) *Promise[V
 		promise.val = val2
 		promise.err = err
 	}()
+
 	return &promise
 }
+
+// // ThenAll run first promise then all others in a chain
+// func ThenAll[T, V any](ctx context.Context, f Func[T, V], promises ...*Promise[T]) (valOut V, err error) {
+// 	if len(promises) < 2 {
+// 		err := errors.New("Need at least 2 promises")
+// 		return nil, err
+// 	}
+// 	p := promises[0]
+// 	var wg sync.WaitGroup
+// 	wg.Add(1)
+
+// 	// done := make(chan struct{})
+
+// 	go func() {
+// 		defer wg.Done()
+// 		// defer close(done)
+// 		for i := 1; i < len(promises); i++ {
+// 			var valIn T
+// 			valIn, err = p.Get()
+// 			if err != nil {
+// 				break
+// 			}
+// 			valOut, err = f(ctx, valIn)
+// 			if err != nil {
+// 				break
+// 			}
+// 			p = promises[i]
+// 		}
+// 	}()
+
+// 	wg.Wait()
+
+// 	return
+// }

@@ -35,6 +35,10 @@ func alwaysErr(ctx context.Context, i int) (int, error) {
 	return 0, ErrFail
 }
 
+func TestThenAll(t *testing.T) {
+
+}
+
 func TestRun(t *testing.T) {
 	ctx := context.Background()
 	// runs instantly and works
