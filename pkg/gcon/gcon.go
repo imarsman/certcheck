@@ -21,6 +21,52 @@ type Promise[V any] struct {
 	done <-chan struct{}
 }
 
+// PromiseSet a struct holding a list of promises
+type PromiseSet[V any] struct {
+	Promises []*Promise[V]
+}
+
+// NewPromiseSet make a new promise set with an initialized promises slice
+func NewPromiseSet[V any]() *PromiseSet[V] {
+	ps := PromiseSet[V]{}
+	ps.Promises = make([]*Promise[V], 0, 0)
+
+	return &ps
+}
+
+func (ps *PromiseSet[V]) Add(promises ...*Promise[V]) {
+	for _, promise := range promises {
+		ps.Promises = append(ps.Promises, promise)
+	}
+}
+
+func (ps *PromiseSet[V]) Wait() error {
+	var wg sync.WaitGroup
+	wg.Add(len(ps.Promises))
+	errChan := make(chan error, len(ps.Promises))
+	done := make(chan struct{})
+	for _, p := range ps.Promises {
+		go func(p Promise[V]) {
+			defer wg.Done()
+			err := p.Wait()
+			if err != nil {
+				errChan <- err
+			}
+		}(*p)
+	}
+	go func() {
+		defer close(done)
+		wg.Wait()
+	}()
+	select {
+	case err := <-errChan:
+		return err
+	case <-done:
+	}
+
+	return nil
+}
+
 // Get returns the value and the error (if any) for the Promise. Get waits until the Func associated with this
 // Promise has completed. If the Func has completed, Get returns immediately.
 func (p *Promise[V]) Get() (V, error) {
