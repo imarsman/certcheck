@@ -347,6 +347,7 @@ func (hostSet *HostSet) Process(warnAtDays, timeout int) *CertDataSet {
 		select {
 		case <-ctx.Done():
 			certData = newCertData()
+			certData.Host = host
 			certData.HostError = true
 			certData.Message = fmt.Sprintf("context for %s done", host)
 			return
@@ -369,7 +370,6 @@ func (hostSet *HostSet) Process(warnAtDays, timeout int) *CertDataSet {
 		// cancellation is handled to set error and default null value
 		withCancellation := gcon.WithCancellation(processHost)
 		promise := gcon.Run(ctx, host, withCancellation)
-		// runList = append(runList, promise)
 		promiseSet.Add(promise)
 	}
 
