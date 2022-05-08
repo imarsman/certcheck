@@ -8,6 +8,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/alexflint/go-arg"
 	"github.com/imarsman/certcheck/pkg/hosts"
@@ -91,7 +92,7 @@ func main() {
 	if callArgs.Timeout < 1 {
 		callArgs.Timeout = 5
 	}
-	certDataSet = hostSet.Process(callArgs.WarnAtDays, callArgs.Timeout)
+	certDataSet = hostSet.Process(callArgs.WarnAtDays, time.Duration(callArgs.Timeout*int(time.Second)))
 	// certDataSet = hostSet.Process(callArgs.WarnAtDays, 1)
 
 	var bytes []byte

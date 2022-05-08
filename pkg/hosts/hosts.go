@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"net"
 	"regexp"
+	"runtime"
 	"sort"
 	"strings"
 	"sync"
@@ -221,7 +222,7 @@ func domainAndPort(input string) (host string, port string, err error) {
 }
 
 // Do check of cert from remote host and populate CertData
-func lookupCertData(host, port string, warnAtDays int, timeout int) (certData CertData, err error) {
+func lookupCertData(host, port string, warnAtDays int, timeout time.Duration) (certData CertData, err error) {
 	tRun := time.Now()
 
 	certData.Host = host
@@ -232,7 +233,7 @@ func lookupCertData(host, port string, warnAtDays int, timeout int) (certData Ce
 
 	warnAt := warnAtDays * 24 * int(time.Hour)
 
-	dialer := &net.Dialer{Timeout: time.Duration(timeout) * time.Second}
+	dialer := &net.Dialer{Timeout: timeout}
 	conn, err := tls.DialWithDialer(
 		dialer,
 		"tcp",
@@ -287,11 +288,11 @@ func lookupCertData(host, port string, warnAtDays int, timeout int) (certData Ce
 var mu = new(sync.Mutex)
 
 // Process process list of hosts and for each get back cert values
-func (hostSet *HostSet) Process(warnAtDays, timeout int) *CertDataSet {
+func (hostSet *HostSet) Process(warnAtDays int, timeout time.Duration) *CertDataSet {
 	var (
 		certDataSet = NewCertDataSet()
-		hostMap     = make(map[string]bool)           // map of hosts to avoid duplicates
-		sem         = semaphore.NewWeighted(int64(6)) // Set semaphore with capacity
+		hostMap     = make(map[string]bool)                          // map of hosts to avoid duplicates
+		sem         = semaphore.NewWeighted(int64(runtime.NumCPU())) // Set semaphore with capacity
 	)
 
 	processHost := func(ctx context.Context, item string) (certData CertData, err error) {
