@@ -72,10 +72,10 @@ func (e *hostSkipError) Error() string {
 
 // CertData values for a TLS certificate
 type CertData struct {
-	ExpiryWarning bool   `json:"expirywarning" yaml:"expirywarning"`
+	Host          string `json:"host" yaml:"host"`
 	HostError     bool   `json:"hosterror" yaml:"hosterror"`
 	Message       string `json:"message" yaml:"message"`
-	Host          string `json:"host" yaml:"host"`
+	ExpiryWarning bool   `json:"expirywarning" yaml:"expirywarning"`
 	Issuer        string `json:"issuer" yaml:"issuer"`
 	Port          string `json:"port" yaml:"port"`
 	TotalDays     int    `json:"totaldays" yaml:"totaldays"`
