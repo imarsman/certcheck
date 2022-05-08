@@ -9,8 +9,8 @@ Go looks up root certificats in OS specific code at `go/src/crypto/x509/` in fil
 currently how much checking is done when verifying a certificate.
 
 This app has been optimized to run checks against multiple hosts in parallel with maximum concurrency controlled by a
-semaphore. The Tasfile test task runs 11 host checks which, because they are running in parallel, takes on average under
-110 ms for each to run, using a semaphore with a capacity of 6. 
+semaphore. The Tasfile test task runs 11 host checks which, because they are running in parallel, takes on average about
+100 ms for each to run, using a semaphore with a capacity of the number of cores.
 
 The semaphore library used is Golang's `x/sync/semaphore` package, which is in the Golang sub-repository collection.
 Golang core libraries have a strong promise not to change API, but sub-repository libraries are not so strict. The
@@ -57,7 +57,7 @@ start a new one. If you use `zsh` your `.zshrc` fill will contain `complete -o n
 
 ### YAML output
 
-`% certcheck google.com -w 54 -y`
+`% certcheck google.com -warn-at-days 54 -yaml`
 ```yaml
 total: 1
 hosterrors: 0
@@ -79,7 +79,7 @@ certdata:
 
 ### JSON output
 
-`% certcheck google.com -w 54 -j`
+`% certcheck google.com -warn-at-days 54 -json`
 ```json
 {
   "total": 1,
@@ -154,25 +154,25 @@ and will have lines with more than one domain split.
 Here is output from a call with a port with no TLS. Note the usefulness of
 having a minimal timeout value in case of errors.
 
-`% certcheck google.com:43 -t 1 -y`
+`$ certcheck -hosts google.com:43 -t 1 -yaml`
 ```YAML
 total: 1
 hosterrors: 1
 expirywarnings: 0
 certdata:
-- expirywarning: false
+- host: google.com
   hosterror: true
-  message: 'Server doesn''t support TLS certificate err: %!s(MISSING)dial tcp 142.251.32.78:43:
-    i/o timeout'
-  host: google.com
+  message: 'dial tcp 142.251.41.78:43: i/o timeout'
+  expirywarning: false
   issuer: ""
   port: "43"
+  totaldays: 0
   daystoexpiry: 0
   warnatdays: 30
-  checktime: "2021-12-31T16:05:09Z"
+  checktime: ""
   notbefore: ""
   notafter: ""
-  fetchtime: 1.001580167s
+  fetchtime: 1.001s
 ```
 
 ## Lines of code
