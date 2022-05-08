@@ -30,6 +30,12 @@ type hostSkipError struct {
 	msg string
 }
 
+func newHostSkipError(msg string) error {
+	hostSkipError := hostSkipError{msg: msg}
+
+	return &hostSkipError
+}
+
 func (e *hostSkipError) Error() string {
 	return e.msg
 }
@@ -315,7 +321,7 @@ func (hostSet *HostSet) Process(warnAtDays, timeout int) *CertDataSet {
 		// Set skipError for duplicate host
 		if foundHostAndPort(hostAndPort) {
 			// Later code will skip adding this to output
-			err = &hostSkipError{msg: "already processed"}
+			err = newHostSkipError("already processed")
 
 			return
 		}
