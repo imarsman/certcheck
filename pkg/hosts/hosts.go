@@ -179,9 +179,9 @@ func (hostSet *HostSet) Add(items ...string) {
 
 // NewHostSet hosts struct containing a list of hosts
 func NewHostSet() *HostSet {
-	hosts := new(HostSet)
+	hostSet := new(HostSet)
 
-	return hosts
+	return hostSet
 }
 
 // Extract host and port from incoming host string
@@ -215,7 +215,7 @@ func domainAndPort(input string) (host string, port string, err error) {
 }
 
 // Do check of cert from remote host and populate CertData
-func getCertData(host, port string, warnAtDays int, timeout int) (certData CertData, err error) {
+func lookupCertData(host, port string, warnAtDays int, timeout int) (certData CertData, err error) {
 	tRun := time.Now()
 
 	certData.Host = host
@@ -323,7 +323,7 @@ func (hostSet *HostSet) Process(warnAtDays, timeout int) *CertDataSet {
 		certData.Host = host
 
 		// Add cert data for host to channel
-		certData, err = getCertData(host, port, warnAtDays, timeout)
+		certData, err = lookupCertData(host, port, warnAtDays, timeout)
 		if err != nil {
 			return
 		}

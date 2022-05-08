@@ -27,17 +27,17 @@ func TestGetCertData(t *testing.T) {
 	is.NoErr(err)
 	is.True(port == "443")
 
-	certData, err := getCertData(host, port, 30, 2)
+	certData, err := lookupCertData(host, port, 30, 2)
 	is.NoErr(err)
 
 	t.Logf("%+v", certData)
 
-	certData, err = getCertData("goobbble.com", port, 30, 2)
+	certData, err = lookupCertData("goobbble.com", port, 30, 2)
 	is.True(err == nil)
 	t.Logf("%+v", certData)
 	is.True(certData.HostError == true)
 
-	certData, err = getCertData("google.com", "27", 30, 1)
+	certData, err = lookupCertData("google.com", "27", 30, 1)
 	is.NoErr(err)
 
 	t.Logf("%+v", certData)
