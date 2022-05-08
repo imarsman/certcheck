@@ -271,8 +271,8 @@ func getCertData(host, port string, warnAtDays int, timeout int) (certData CertD
 	certData.CheckTime = now.Format(timeFormat) // set time cert was checked
 
 	// Set expiry flag and fetch time
-	expired := (time.Now().Add(time.Duration(warnAt)).UnixNano() > notAfter.UnixNano())
-	certData.ExpiryWarning = expired
+	isExpired := (time.Now().Add(time.Duration(warnAt)).UnixNano() > notAfter.UnixNano())
+	certData.ExpiryWarning = isExpired
 	certData.FetchTime = time.Since(tRun).Round(time.Millisecond).String()
 
 	return
