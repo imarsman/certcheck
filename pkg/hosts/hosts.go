@@ -26,11 +26,11 @@ const (
 	tlsDefaultPort = "443"
 )
 
-type skipError struct {
+type hostSkipError struct {
 	msg string
 }
 
-func (e *skipError) Error() string {
+func (e *hostSkipError) Error() string {
 	return e.msg
 }
 
@@ -220,14 +220,13 @@ func getCertData(host, port string, warnAtDays int, timeout int) (certData CertD
 
 	certData.Host = host
 	certData.Port = port
-	certData.HostError = false
 	certData.WarnAtDays = warnAtDays
+
 	hostAndPort := fmt.Sprintf("%s:%s", host, port)
 
 	warnAt := warnAtDays * 24 * int(time.Hour)
 
 	dialer := &net.Dialer{Timeout: time.Duration(timeout) * time.Second}
-
 	conn, err := tls.DialWithDialer(
 		dialer,
 		"tcp",
@@ -316,7 +315,7 @@ func (hostSet *HostSet) Process(warnAtDays, timeout int) *CertDataSet {
 		// Set skipError for duplicate host
 		if foundHostAndPort(hostAndPort) {
 			// Later code will skip adding this to output
-			err = &skipError{msg: "already processed"}
+			err = &hostSkipError{msg: "already processed"}
 
 			return
 		}
@@ -357,7 +356,7 @@ func (hostSet *HostSet) Process(warnAtDays, timeout int) *CertDataSet {
 		// If there is an error make a minimal error result
 		if err != nil {
 			switch err.(type) {
-			case *skipError:
+			case *hostSkipError:
 				continue
 			default:
 			}
