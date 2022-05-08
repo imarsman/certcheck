@@ -362,12 +362,10 @@ func (hostSet *HostSet) Process(warnAtDays int, timeout time.Duration) *CertData
 		certData, err := p.Get()
 		// If there is an error make a minimal error result
 		if err != nil {
-			switch err.(type) {
-			case *hostSkipError: // skip if of type hostSkipError
+			var e *hostSkipError
+			if errors.As(err, &e) {
 				continue
-			default:
 			}
-			// If not skipped set error values
 			certData.HostError = true
 			certData.Message = err.Error()
 		}
