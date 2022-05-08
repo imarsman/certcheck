@@ -92,6 +92,7 @@ func main() {
 		callArgs.Timeout = 5
 	}
 	certDataSet = hostSet.Process(callArgs.WarnAtDays, callArgs.Timeout)
+	// certDataSet = hostSet.Process(callArgs.WarnAtDays, 1)
 
 	var bytes []byte
 	var err error

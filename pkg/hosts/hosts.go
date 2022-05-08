@@ -26,6 +26,14 @@ const (
 	tlsDefaultPort = "443"
 )
 
+type skipError struct {
+	msg string
+}
+
+func (e *skipError) Error() string {
+	return e.msg
+}
+
 // For if file-based check makes sense
 // func check() {
 // 	const rootPEM = `
@@ -176,11 +184,6 @@ func NewHostSet() *HostSet {
 	return hosts
 }
 
-// Semaphore is for all requests to Process
-var (
-	semCtx = context.Background() // ctx for semaphore
-)
-
 // Extract host and port from incoming host string
 func domainAndPort(input string) (host string, port string, err error) {
 	if strings.Contains(input, ":") {
@@ -215,7 +218,6 @@ func domainAndPort(input string) (host string, port string, err error) {
 func getCertData(host, port string, warnAtDays int, timeout int) (certData CertData, err error) {
 	tRun := time.Now()
 
-	certData = newCertData()
 	certData.Host = host
 	certData.Port = port
 	certData.HostError = false
@@ -231,24 +233,15 @@ func getCertData(host, port string, warnAtDays int, timeout int) (certData CertD
 		"tcp",
 		hostAndPort, nil)
 	if err != nil {
-		certData.HostError = true
-		certData.Message = fmt.Sprintf("Server doesn't support TLS certificate err: %s", err.Error())
-		certData.FetchTime = time.Since(tRun).String()
-		err = nil
-
+		certData.FetchTime = time.Since(tRun).Round(time.Millisecond).String()
 		return
 	}
 
 	err = conn.VerifyHostname(host)
 	if err != nil {
-		certData.HostError = true
-		certData.Message = fmt.Sprintf("Hostname doesn't match with certificate: %s" + err.Error())
-		certData.FetchTime = time.Since(tRun).String()
-		err = nil
-
+		certData.FetchTime = time.Since(tRun).Round(time.Millisecond).String()
 		return
 	}
-	certData.HostError = false
 
 	// Set issuer
 	certData.Issuer = conn.ConnectionState().PeerCertificates[0].Issuer.String()
@@ -292,19 +285,16 @@ var mu = new(sync.Mutex)
 func (hostSet *HostSet) Process(warnAtDays, timeout int) *CertDataSet {
 	var (
 		certDataSet = NewCertDataSet()
-		hostMap     = make(map[string]bool) // map of hosts to avoid duplicates
+		hostMap     = make(map[string]bool)           // map of hosts to avoid duplicates
+		sem         = semaphore.NewWeighted(int64(6)) // Set semaphore with capacity
 	)
-
-	var sem = semaphore.NewWeighted(int64(6)) // Set semaphore with capacity
 
 	processHost := func(ctx context.Context, item string) (certData CertData, err error) {
 		sem.Acquire(context.Background(), 1)
 		defer sem.Release(1)
 		host, port, err := domainAndPort(item)
 		if err != nil {
-			certData = newCertData()
-			certData.HostError = true
-			certData.Message = err.Error()
+			certData.Host = item
 
 			return
 		}
@@ -323,35 +313,20 @@ func (hostSet *HostSet) Process(warnAtDays, timeout int) *CertDataSet {
 			return
 		}
 
+		// Set skipError for duplicate host
 		if foundHostAndPort(hostAndPort) {
-			err = errors.New("already processed " + item)
-			certData = CertData{}
+			// Later code will skip adding this to output
+			err = &skipError{msg: "already processed"}
 
 			return
 		}
 
-		if err != nil {
-			certData = newCertData()
-			certData.Host = host
-			certData.HostError = true
-			certData.Message = err.Error()
+		certData.Host = host
 
-			return
-		}
 		// Add cert data for host to channel
 		certData, err = getCertData(host, port, warnAtDays, timeout)
 		if err != nil {
-			// fmt.Println(err)
-		}
-
-		select {
-		case <-ctx.Done():
-			certData = newCertData()
-			certData.Host = host
-			certData.HostError = true
-			certData.Message = fmt.Sprintf("context for %s done", host)
 			return
-		default:
 		}
 
 		return
@@ -377,14 +352,15 @@ func (hostSet *HostSet) Process(warnAtDays, timeout int) *CertDataSet {
 	promiseSet.Wait()
 
 	// Go through the Run list, waiting for all that are not finished
-	for i, p := range promiseSet.Promises {
+	for _, p := range promiseSet.Promises {
 		certData, err := p.Get()
 		// If there is an error make a minimal error result
 		if err != nil {
-			// Use host information from hostSet as the two slices should be ordered identically
-			host := hostSet.Hosts[i]
-			certData = newCertData()
-			certData.Host = host
+			switch err.(type) {
+			case *skipError:
+				continue
+			default:
+			}
 			certData.HostError = true
 			certData.Message = err.Error()
 		}

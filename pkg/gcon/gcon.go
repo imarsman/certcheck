@@ -34,18 +34,20 @@ func NewPromiseSet[V any]() *PromiseSet[V] {
 	return &ps
 }
 
-func (ps *PromiseSet[V]) Add(promises ...*Promise[V]) {
+// Add add one or more promises to promise set
+func (promiseSet *PromiseSet[V]) Add(promises ...*Promise[V]) {
 	for _, promise := range promises {
-		ps.Promises = append(ps.Promises, promise)
+		promiseSet.Promises = append(promiseSet.Promises, promise)
 	}
 }
 
-func (ps *PromiseSet[V]) Wait() error {
+// Wait wait for all promises in promiseset to complete. Same as the Wait function but tied to a promise set
+func (promiseSet *PromiseSet[V]) Wait() error {
 	var wg sync.WaitGroup
-	wg.Add(len(ps.Promises))
-	errChan := make(chan error, len(ps.Promises))
+	wg.Add(len(promiseSet.Promises))
+	errChan := make(chan error, len(promiseSet.Promises))
 	done := make(chan struct{})
-	for _, p := range ps.Promises {
+	for _, p := range promiseSet.Promises {
 		go func(p Promise[V]) {
 			defer wg.Done()
 			err := p.Wait()
@@ -69,17 +71,17 @@ func (ps *PromiseSet[V]) Wait() error {
 
 // Get returns the value and the error (if any) for the Promise. Get waits until the Func associated with this
 // Promise has completed. If the Func has completed, Get returns immediately.
-func (p *Promise[V]) Get() (V, error) {
-	<-p.done
-	return p.val, p.err
+func (promise *Promise[V]) Get() (V, error) {
+	<-promise.done
+	return promise.val, promise.err
 }
 
 // GetNow returns the value and the error (if any) for the Promise. If the Func associated with this Promise has
 // not completed, GetNow returns the zero value for the return type and ErrIncomplete.
-func (p *Promise[V]) GetNow() (V, error) {
+func (promise *Promise[V]) GetNow() (V, error) {
 	select {
-	case <-p.done:
-		return p.val, p.err
+	case <-promise.done:
+		return promise.val, promise.err
 	default:
 		var zero V
 		return zero, ErrIncomplete
@@ -106,9 +108,9 @@ type Waiter interface {
 }
 
 // Wait allows a Promise to implement the Waiter interface. It is similar to Get, but only returns the error.
-func (p *Promise[V]) Wait() error {
-	<-p.done
-	return p.err
+func (promise *Promise[V]) Wait() error {
+	<-promise.done
+	return promise.err
 }
 
 // Wait wait for a group of same type promises to complete
@@ -197,12 +199,12 @@ func Then[T, V any](ctx context.Context, p *Promise[T], f Func[T, V]) *Promise[V
 	}
 	go func() {
 		defer close(done)
-		val, err := p.Get()
+		val1, err := p.Get()
 		if err != nil {
 			promise.err = err
 			return
 		}
-		val2, err := f(ctx, val)
+		val2, err := f(ctx, val1)
 		promise.val = val2
 		promise.err = err
 	}()
