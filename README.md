@@ -1,29 +1,32 @@
 # TLS certificate check utility
 
-One can use the `openssl` or `curl` utilities to get a TLS certificate expiry
-information for a domain. This utility allows the same retrieval of validity of
-TLS certificate for a domain, a check of a certificate belonging to the domain
-being investigated, and the added ability to specify a cutoff number of days
-from the current date before a certificate is considered to be at risk of
-expiry.
+One can use the `openssl` or `curl` utilities to get a TLS certificate expiry information for a domain. This utility
+allows the same retrieval of validity of TLS certificate for a domain, a check of a certificate belonging to the domain
+being investigated, and the added ability to specify a cutoff number of days from the current date before a certificate
+is considered to be at risk of expiry.
 
-Go looks up root certificats in OS specific code at `go/src/crypto/x509/` in
-files `root_[OS].go`. I am not positive currently how much checking is done when
-verifying a certificate.
+Go looks up root certificats in OS specific code at `go/src/crypto/x509/` in files `root_[OS].go`. I am not positive
+currently how much checking is done when verifying a certificate.
 
-This app has been optimized to run checks against multiple hosts in parallel
-with maximum concurrency controlled by a semaphore. The Tasfile test task runs
-11 host checks which, because they are running in parallel, takes on average
-under 110 ms for each to run, using a semaphore with a capacity of 6. 
+This app has been optimized to run checks against multiple hosts in parallel with maximum concurrency controlled by a
+semaphore. The Tasfile test task runs 11 host checks which, because they are running in parallel, takes on average under
+110 ms for each to run, using a semaphore with a capacity of 6. 
 
-The semaphore library used is Golang's x/sync/semaphore package, which is in the
-Golang sub-repository collection. Golang core libraries have a strong promise
-not to change API, but sub-repository libraries are not so strict. The semaphore
-library provides a weighted semaphore, and the code uses a weight value of 1 for
-each reservation, which makes it act like a standard semaphore.
+The semaphore library used is Golang's `x/sync/semaphore` package, which is in the Golang sub-repository collection.
+Golang core libraries have a strong promise not to change API, but sub-repository libraries are not so strict. The
+semaphore library provides a weighted semaphore, and the code uses a weight value of 1 for each reservation, which makes
+it act like a standard semaphore.
 
-In case it was ever useful to use just the host checking code outside of the
-main package, that code has been put in its own package at pkg/hosts.
+This code uses a small generic promise package, `gcon`. It works as well as the previous code, which used a waitgroup
+and a channel. Both methods work fine. The promise pattern would be more useful if things like `then` were to be used to
+process data in steps in a deterministic way. As it stands each certificate is checked independently.
+
+Earlier commits included lots of duplicate setting of the host data structure. That has been cleaned up. Errors for host
+lookups are reported unless the host error is of type hostSkipError (for duplicates). The goal was to report every host
+in the output whether that host's lookup succeeded or not.
+
+In case it was ever useful to use just the host checking code outside of the main package, that code has been put in its
+own package at pkg/hosts.
 
 ## Help output
 
