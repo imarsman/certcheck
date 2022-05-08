@@ -348,8 +348,6 @@ func (hostSet *HostSet) Process(warnAtDays int, timeout time.Duration) *CertData
 		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		defer cancel()
 
-		// cancellation is handled to set error and default null value
-		// withCancellation := gcon.WithCancellation(processHost)
 		promise := gcon.Run(ctx, host, processHost)
 		promiseSet.Add(promise)
 	}
