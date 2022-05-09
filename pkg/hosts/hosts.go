@@ -27,16 +27,19 @@ const (
 	tlsDefaultPort = "443"
 )
 
+// hostSkipError an error indicating to skip usage of a host
 type hostSkipError struct {
 	msg string
 }
 
+// newHostSkipError make a new host skip error and return as an error type
 func newHostSkipError(msg string) error {
 	hostSkipError := hostSkipError{msg: msg}
 
 	return &hostSkipError
 }
 
+// Error implement error inteface Error method
 func (e *hostSkipError) Error() string {
 	return e.msg
 }
@@ -127,7 +130,7 @@ func (certDataSet *CertDataSet) finalize() {
 		if v.HostError {
 			certDataSet.HostErrors++
 		}
-		if v.ExpiryWarning == true {
+		if v.ExpiryWarning {
 			certDataSet.ExpiredWarnings++
 		}
 	}
