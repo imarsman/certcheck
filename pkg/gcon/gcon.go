@@ -69,6 +69,16 @@ func (promiseSet *PromiseSet[V]) Wait() error {
 	return nil
 }
 
+// Done check if work is done
+func (promise *Promise[V]) Done() bool {
+	select {
+	case <-promise.done:
+		return true
+	default:
+		return false
+	}
+}
+
 // Get returns the value and the error (if any) for the Promise. Get waits until the Func associated with this
 // Promise has completed. If the Func has completed, Get returns immediately.
 func (promise *Promise[V]) Get() (V, error) {
