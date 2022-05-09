@@ -9,6 +9,8 @@ import (
 // Func represents any function that returns a Promise when passed to Run or Then.
 type Func[T, V any] func(context.Context, T) (V, error)
 
+type FuncSame[V any] func(context.Context, V) (V, error)
+
 var (
 	// ErrIncomplete is returned when GetNow is invoked and the Func associated with the Promise hasn't completed.
 	ErrIncomplete = errors.New("incomplete")
@@ -220,4 +222,31 @@ func Then[T, V any](ctx context.Context, p *Promise[T], f Func[T, V]) *Promise[V
 	}()
 
 	return &promise
+}
+
+// ThenAll shows some of the possible shortcomings of promise chaining in that the arg and result needs to be of the
+// same type.
+func ThenAll[T any](ctx context.Context, promise *Promise[T], functions ...FuncSame[T]) (result T, err error) {
+	var arg T
+	go func() {
+		for _, fun := range functions {
+			// p := Run[T, V](ctx, t, fun)
+			arg, err = promise.Get()
+			if err != nil {
+				return
+			}
+			done := make(chan struct{})
+			promise = &Promise[T]{
+				done: done,
+			}
+			result, err = fun(ctx, arg)
+			if err != nil {
+				return
+			}
+			promise.val = result
+			promise.err = err
+		}
+	}()
+
+	return result, err
 }
