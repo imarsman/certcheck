@@ -124,12 +124,17 @@ func TestWait(t *testing.T) {
 	if !errors.Is(err, ErrFail) {
 		t.Error("expected ErrFail, got ", err)
 	}
+
+	// A slice of Waiters
 	waiters := []Waiter{}
-	waiters = append(waiters, p3, p4)
+	p5 := Run(ctx, 2*time.Second, timed)
+	p6 := Run(ctx, 0, alwaysErr)
+	waiters = append(waiters, p5, p6)
 	err = WaitAny(waiters...)
 	if !errors.Is(err, ErrFail) {
 		t.Error("expected ErrFail, got ", err)
 	}
+
 	// won't be done, returns ErrIncomplete
 	v3, err := p3.GetNow()
 	if v3 != 0 {
