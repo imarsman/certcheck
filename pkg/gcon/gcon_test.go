@@ -124,6 +124,12 @@ func TestWait(t *testing.T) {
 	if !errors.Is(err, ErrFail) {
 		t.Error("expected ErrFail, got ", err)
 	}
+	waiters := []Waiter{}
+	waiters = append(waiters, p3, p4)
+	err = WaitAny(waiters...)
+	if !errors.Is(err, ErrFail) {
+		t.Error("expected ErrFail, got ", err)
+	}
 	// won't be done, returns ErrIncomplete
 	v3, err := p3.GetNow()
 	if v3 != 0 {
@@ -192,14 +198,14 @@ func TestThen(t *testing.T) {
 	}
 }
 
-func TestThenAll(t *testing.T) {
-	ctx := context.Background()
-	// no error
-	p := Run(ctx, 10, doubler)
-	v, err := ThenAll(ctx, p, doubler, doubler, doubler)
+// func TestThenAll(t *testing.T) {
+// 	ctx := context.Background()
+// 	// no error
+// 	p := Run(ctx, 10, doubler)
+// 	v, err := ThenAll(ctx, p, doubler, doubler, doubler)
 
-	if err != nil {
-		t.Log(err)
-	}
-	t.Log(v)
-}
+// 	if err != nil {
+// 		t.Log(err)
+// 	}
+// 	t.Log(v)
+// }
