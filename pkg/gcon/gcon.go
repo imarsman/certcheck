@@ -9,7 +9,7 @@ import (
 // Func represents any function that returns a Promise when passed to Run or Then.
 type Func[T, V any] func(context.Context, T) (V, error)
 
-type FuncSame[V any] func(context.Context, V) (V, error)
+// type FuncSame[V any] func(context.Context, V) (V, error)
 
 var (
 	// ErrIncomplete is returned when GetNow is invoked and the Func associated with the Promise hasn't completed.
@@ -211,13 +211,13 @@ func Then[T, V any](ctx context.Context, p *Promise[T], f Func[T, V]) *Promise[V
 	}
 	go func() {
 		defer close(done)
-		val1, err := p.Get()
+		t, err := p.Get()
 		if err != nil {
 			promise.err = err
 			return
 		}
-		val2, err := f(ctx, val1)
-		promise.val = val2
+		v, err := f(ctx, t)
+		promise.val = v
 		promise.err = err
 	}()
 
@@ -226,27 +226,31 @@ func Then[T, V any](ctx context.Context, p *Promise[T], f Func[T, V]) *Promise[V
 
 // ThenAll shows some of the possible shortcomings of promise chaining in that the arg and result needs to be of the
 // same type.
-func ThenAll[T any](ctx context.Context, promise *Promise[T], functions ...FuncSame[T]) (result T, err error) {
-	var arg T
-	go func() {
-		for _, fun := range functions {
-			// p := Run[T, V](ctx, t, fun)
-			arg, err = promise.Get()
-			if err != nil {
-				return
-			}
-			done := make(chan struct{})
-			promise = &Promise[T]{
-				done: done,
-			}
-			result, err = fun(ctx, arg)
-			if err != nil {
-				return
-			}
-			promise.val = result
-			promise.err = err
-		}
-	}()
+// func ThenAll[V any](ctx context.Context, promise *Promise[V], functions ...FuncSame[V]) (result V, err error) {
+// 	var arg V
+// 	var wg = new(sync.WaitGroup)
+// 	wg.Add(len(functions))
+// 	for _, fun := range functions {
+// 		arg, err = promise.Get()
+// 		if err != nil {
+// 			return
+// 		}
+// 		done := make(chan struct{})
+// 		promise = &Promise[V]{
+// 			done: done,
+// 		}
+// 		go func(fun FuncSame[V]) {
+// 			defer close(done)
+// 			defer wg.Done()
+// 			result, err = fun(ctx, arg)
+// 			if err != nil {
+// 				return
+// 			}
+// 			promise.val = result
+// 			promise.err = err
+// 		}(fun)
+// 	}
 
-	return result, err
-}
+// 	wg.Wait()
+// 	return result, err
+// }

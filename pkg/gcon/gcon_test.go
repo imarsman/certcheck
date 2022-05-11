@@ -35,10 +35,6 @@ func alwaysErr(ctx context.Context, i int) (int, error) {
 	return 0, ErrFail
 }
 
-func TestThenAll(t *testing.T) {
-
-}
-
 func TestRun(t *testing.T) {
 	ctx := context.Background()
 	// runs instantly and works
@@ -194,4 +190,16 @@ func TestThen(t *testing.T) {
 	if !errors.Is(err, ErrFail) {
 		t.Error("expected ErrFail, got", err)
 	}
+}
+
+func TestThenAll(t *testing.T) {
+	ctx := context.Background()
+	// no error
+	p := Run(ctx, 10, doubler)
+	v, err := ThenAll(ctx, p, doubler, doubler, doubler)
+
+	if err != nil {
+		t.Log(err)
+	}
+	t.Log(v)
 }
