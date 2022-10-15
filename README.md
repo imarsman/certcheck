@@ -34,9 +34,9 @@ own package at pkg/hosts.
 $ certcheck -h
 certcheck
 ---------
-Commit:  ba62c26
-Date:    2022-10-15T02:41:16Z
-Tag:      v0.1.0
+Commit:  20d55a5
+Date:    2022-10-15T02:48:39Z
+Tag:     v0.1.0
 OS:      darwin
 ARCH:    arm64
 
