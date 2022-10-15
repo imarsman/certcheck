@@ -3,8 +3,10 @@ package hosts
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/matryer/is"
+	"github.com/samber/mo"
 )
 
 func TestParseHost(t *testing.T) {
@@ -76,4 +78,26 @@ func TestLoop(t *testing.T) {
 		t.Log(count, newCount)
 		is.True(count == newCount)
 	}
+}
+
+func TestMonad(t *testing.T) {
+	option1 := mo.Some(42)
+	t.Log(option1.IsPresent())
+
+	hostSet := NewHostSet()
+	hostSet.Add("ibm.com")
+	hostSet.Add("ibm.com")
+	hostSet.Add("wwwww5.com")
+	hostSet.Add("microsoft.com")
+	hostSet.Add("cisco.com")
+	certDataSet := hostSet.Process2(30, 1*time.Second)
+
+	// for _, hd := range certDataSet.CertData {
+	bytes, err := certDataSet.YAML()
+	if err != nil {
+		panic(err)
+	}
+
+	t.Log("output", string(bytes))
+	// }
 }

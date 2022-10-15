@@ -6,6 +6,8 @@ import (
 	"sync"
 )
 
+// from https://github.com/jonbodner/gcon
+
 // Func represents any function that returns a Promise when passed to Run or Then.
 type Func[T, V any] func(context.Context, T) (V, error)
 

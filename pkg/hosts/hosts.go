@@ -19,7 +19,7 @@ import (
 
 	"github.com/imarsman/certcheck/pkg/gcon"
 	"golang.org/x/sync/semaphore"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -289,6 +289,93 @@ func lookupCertData(host, port string, warnAtDays int, timeout time.Duration) (c
 }
 
 var mu = new(sync.Mutex)
+
+// Process2 process list of hosts and for each get back cert values
+func (hostSet *HostSet) Process2(warnAtDays int, timeout time.Duration) *CertDataSet {
+	var (
+		certDataSet = NewCertDataSet()
+		hostMap     = make(map[string]bool)                          // map of hosts to avoid duplicates
+		sem         = semaphore.NewWeighted(int64(runtime.NumCPU())) // Set semaphore with capacity
+		ch          = make(chan CertData, 2)
+		wg          = new(sync.WaitGroup)
+	)
+
+	wg.Add(len(hostSet.Hosts))
+
+	processHost := func(item string) {
+		var skip bool
+
+		defer wg.Done()
+		var certData = CertData{}
+		defer func() {
+			if !skip {
+				ch <- certData
+			}
+		}()
+
+		sem.Acquire(context.Background(), 1)
+		defer sem.Release(1)
+		host, port, err := domainAndPort(item)
+		if err != nil {
+			certData.Host = item
+			certData.Message = err.Error()
+			certData.HostError = true
+
+			return
+		}
+		hostAndPort := fmt.Sprintf("%s:%s", host, port)
+
+		var foundHostAndPort = func(string) (found bool) {
+			mu.Lock()
+			defer mu.Unlock()
+
+			if hostMap[hostAndPort] {
+				found = true
+				return
+			}
+			hostMap[hostAndPort] = true
+
+			return
+		}
+
+		// Set skipError for duplicate host
+		if foundHostAndPort(hostAndPort) {
+			skip = true
+
+			return
+		}
+
+		certData.Host = host
+
+		// Add cert data for host to channel
+		certData, err = lookupCertData(host, port, warnAtDays, timeout)
+		if err != nil {
+			certData.Message = err.Error()
+			certData.HostError = true
+
+			return
+		}
+
+		return
+	}
+
+	for _, host := range hostSet.Hosts {
+		go processHost(host)
+	}
+
+	go func() {
+		wg.Wait()
+		close(ch)
+	}()
+
+	for certData := range ch {
+		certDataSet.CertData = append(certDataSet.CertData, certData)
+	}
+
+	certDataSet.finalize() // Produce summary values and sort
+
+	return certDataSet
+}
 
 // Process process list of hosts and for each get back cert values
 func (hostSet *HostSet) Process(warnAtDays int, timeout time.Duration) *CertDataSet {
