@@ -290,8 +290,8 @@ func lookupCertData(host, port string, warnAtDays int, timeout time.Duration) (c
 
 var mu = new(sync.Mutex)
 
-// Process2 process list of hosts and for each get back cert values
-func (hostSet *HostSet) Process2(warnAtDays int, timeout time.Duration) *CertDataSet {
+// Process process list of hosts and for each get back cert values
+func (hostSet *HostSet) Process(warnAtDays int, timeout time.Duration) *CertDataSet {
 	var (
 		certDataSet = NewCertDataSet()
 		hostMap     = make(map[string]bool)                          // map of hosts to avoid duplicates
@@ -377,8 +377,8 @@ func (hostSet *HostSet) Process2(warnAtDays int, timeout time.Duration) *CertDat
 	return certDataSet
 }
 
-// Process process list of hosts and for each get back cert values
-func (hostSet *HostSet) Process(warnAtDays int, timeout time.Duration) *CertDataSet {
+// ProcessFuture process list of hosts and for each get back cert values
+func (hostSet *HostSet) ProcessFuture(warnAtDays int, timeout time.Duration) *CertDataSet {
 	var (
 		certDataSet = NewCertDataSet()
 		hostMap     = make(map[string]bool)                          // map of hosts to avoid duplicates
