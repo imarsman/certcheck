@@ -4,6 +4,7 @@ vars:
   hostList: >
     ibm.com ibm.com bbc.com amazon.com microsoft.com cisco.com workday.com o.canada.com
     www.thespec.com www.thestar.com www.parliament.gov.za www.gov.za oracle.com:27 unknowndomain.cob
+  APPNAME: certcheck
   targetbin: ~/bin
   buildname: certcheck
   dir: >
@@ -14,21 +15,47 @@ tasks:
     cmds:
       - echo "use 'task -l' to list tasks"
     silent: true
-  install:
-    desc: copy build file to local bin
+  build:
     dir: .
-    preconditions:
-      - test -d {{.targetbin}}/
+    cmds:
+      - goreleaser release --snapshot --rm-dist
+  install:
+    vars:
+      ARCH_VER:
+        sh: if [[ "{{ARCH}}" = "amd64" ]]; then echo "_v1"; else echo ""; fi
+    dir: ./dist/{{.buildname}}_{{OS}}_{{ARCH}}{{.ARCH_VER}}/
+    desc: "install in local bin directory"
     cmds:
       - task: build
-      - cmd: rm {{.targetbin}}/{{.buildname}} && cp ./build/{{.buildname}} {{.targetbin}}
+      - cmd: rm {{.targetbin}}/{{.buildname}}
         ignore_error: true
-  build:
-    desc: build app
-    dir: cmd/{{.buildname}}
+      - cp ./{{.buildname}} {{.targetbin}}
+      - cmd: echo "{{.completionmsg}}"
+        silent: true
+  release:
+    dir: .
+    desc: release to github using goreleaser
     cmds:
-      - rm -f ../../build/{{.buildname}}
-      - go build -o ../../build/{{.buildname}} .
+      - goreleaser release --rm-dist
+  clean-cache:
+    cmds:
+      - go clean -testcache
+
+  # install:
+  #   desc: copy build file to local bin
+  #   dir: .
+  #   preconditions:
+  #     - test -d {{.targetbin}}/
+  #   cmds:
+  #     - task: build
+  #     - cmd: rm {{.targetbin}}/{{.buildname}} && cp ./build/{{.buildname}} {{.targetbin}}
+  #       ignore_error: true
+  # build:
+  #   desc: build app
+  #   dir: cmd/{{.buildname}}
+  #   cmds:
+  #     - rm -f ../../build/{{.buildname}}
+  #     - go build -o ../../build/{{.buildname}} .
   test:
     desc: test app
     dir: .

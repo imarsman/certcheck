@@ -4,9 +4,11 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"os"
 	"regexp"
+	"runtime"
 	"strings"
 	"time"
 
@@ -16,14 +18,44 @@ import (
 	"github.com/posener/complete/v2/predict"
 )
 
-// args CLI args
-type args struct {
+var GitCommit string
+var GitLastTag string
+var GitExactTag string
+var Date string
+
+// Args CLI Args
+type Args struct {
 	Hosts      []string `arg:"-H,--hosts" help:"host:port list to check"`
 	Timeout    int      `arg:"-t,--timeout" default:"10" help:"connection timeout seconds"`
 	WarnAtDays int      `arg:"-w,--warn-at-days" placeholder:"WARNAT" default:"30" help:"warn if expiry before days"`
 	YAML       bool     `arg:"-y,--yaml" help:"display output as YAML"`
 	JSON       bool     `arg:"-j,--json" help:"display output as JSON (default)"`
 }
+
+// Version get version information
+func (Args) Version() string {
+	var buf = new(bytes.Buffer)
+
+	msg := os.Args[0]
+	buf.WriteString(fmt.Sprintln(msg))
+	buf.WriteString(fmt.Sprintln(strings.Repeat("-", len(msg))))
+
+	if GitCommit != "" {
+		buf.WriteString(fmt.Sprintf("Commit: %8s\n", GitCommit))
+	}
+	if Date != "" {
+		buf.WriteString(fmt.Sprintf("Date: %23s\n", Date))
+	}
+	if GitExactTag != "" {
+		buf.WriteString(fmt.Sprintf("Tag: %11s\n", GitExactTag))
+	}
+	buf.WriteString(fmt.Sprintf("OS: %11s\n", runtime.GOOS))
+	buf.WriteString(fmt.Sprintf("ARCH: %8s\n", runtime.GOARCH))
+
+	return buf.String()
+}
+
+var callArgs Args
 
 // Entry point for app
 func main() {
@@ -39,7 +71,7 @@ func main() {
 
 	cmd.Complete("certcheck")
 
-	var callArgs args // initialize call args structure
+	// var callArgs args // initialize call args structure
 	arg.MustParse(&callArgs)
 
 	// Make a cert value set that will hold the output data
