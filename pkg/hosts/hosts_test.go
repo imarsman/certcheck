@@ -90,7 +90,7 @@ func TestMonad(t *testing.T) {
 	hostSet.Add("wwwww5.com")
 	hostSet.Add("microsoft.com")
 	hostSet.Add("cisco.com")
-	certDataSet := hostSet.Process2(30, 1*time.Second)
+	certDataSet := hostSet.Process(30, 1*time.Second)
 
 	// for _, hd := range certDataSet.CertData {
 	bytes, err := certDataSet.YAML()
