@@ -32,6 +32,14 @@ own package at pkg/hosts.
 
 ```
 $ certcheck -h
+certcheck
+---------
+Commit:  ba62c26
+Date:    2022-10-15T02:41:16Z
+Tag:      v0.1.0
+OS:      darwin
+ARCH:    arm64
+
 Usage: certcheck [--hosts HOSTS] [--timeout TIMEOUT] [--warn-at-days WARNAT] [--yaml] [--json]
 
 Options:
@@ -44,6 +52,7 @@ Options:
   --yaml, -y             display output as YAML
   --json, -j             display output as JSON (default)
   --help, -h             display this help and exit
+  --version              display version and exit
 ```
 
 ## Completion
