@@ -36,6 +36,9 @@ release:
 
     certcheck checks tls certificates and expiry dates
 
+    v0.1.1
+    Added certfile support
+
     v0.1.0
     Initial release with 2 methods for parallel processing
 
