@@ -17,6 +17,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/imarsman/certcheck/pkg/cert"
 	"github.com/imarsman/certcheck/pkg/gcon"
 	"golang.org/x/sync/semaphore"
 	"gopkg.in/yaml.v3"
@@ -192,6 +193,52 @@ func NewHostSet() *HostSet {
 	hostSet := new(HostSet)
 
 	return hostSet
+}
+
+// ProcessCertFile process a certificate file
+func (hostSet *HostSet) ProcessCertFile(bytes []byte, warnAtDays int, timeout time.Duration) *CertDataSet {
+	var (
+		certDataSet = NewCertDataSet()
+	)
+
+	certData := newCertData()
+	cert, err := cert.ReadCert(bytes)
+	if err == nil {
+		certData.Host = strings.Join(cert.DNSNames, ", ")
+		daysLeft := 0
+		certData.Issuer = cert.Issuer.String()
+
+		now := time.Now()
+		nanosToExpiry := cert.NotAfter.UnixNano() - now.UnixNano()
+
+		// // If > one day left report that integer
+		if nanosToExpiry > int64(time.Hour+24) {
+			daysLeft = int((cert.NotAfter.UnixNano() - now.UnixNano()) / int64(time.Hour*24))
+		}
+		certData.DaysToExpiry = daysLeft // set days left to expiry
+		certData.WarnAtDays = warnAtDays
+		certData.NotBefore = cert.NotBefore.Format(timeFormat)
+		certData.NotAfter = cert.NotAfter.Format(timeFormat)
+
+		warnAt := warnAtDays * 24 * int(time.Hour)
+
+		isExpired := (time.Now().Add(time.Duration(warnAt)).UnixNano() > cert.NotAfter.UnixNano())
+		certData.ExpiryWarning = isExpired
+
+		certData.TotalDays = int((cert.NotAfter.UnixNano() - cert.NotBefore.UnixNano()) / int64(time.Hour*24))
+		certDataSet.CertData = append(certDataSet.CertData, certData)
+	} else {
+		certData.Host = ""
+		certData.Message = err.Error()
+		certData.HostError = true
+		certDataSet.CertData = append(certDataSet.CertData, certData)
+		certDataSet.finalize()
+
+		return certDataSet
+	}
+
+	certDataSet.finalize()
+	return certDataSet
 }
 
 // Extract host and port from incoming host string
