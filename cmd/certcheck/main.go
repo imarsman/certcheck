@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"regexp"
 	"runtime"
@@ -26,6 +27,7 @@ var Date string
 // Args CLI Args
 type Args struct {
 	Hosts      []string `arg:"-H,--hosts" help:"host:port list to check"`
+	CertFile   string   `arg:"-c,--certfile" help:"certificate file to parse"`
 	Timeout    int      `arg:"-t,--timeout" default:"10" help:"connection timeout seconds"`
 	WarnAtDays int      `arg:"-w,--warn-at-days" placeholder:"WARNAT" default:"30" help:"warn if expiry before days"`
 	YAML       bool     `arg:"-y,--yaml" help:"display output as YAML"`
@@ -62,6 +64,7 @@ func main() {
 	cmd := &complete.Command{
 		Flags: map[string]complete.Predictor{
 			"hosts":        predict.Nothing,
+			"certfile":     predict.Files("*"),
 			"timeout":      predict.Nothing,
 			"warn-at-days": predict.Nothing,
 			"yaml":         predict.Nothing,
@@ -82,6 +85,7 @@ func main() {
 	// var hostsToCheck []string
 
 	var hostSet = hosts.NewHostSet()
+
 	if (stat.Mode() & os.ModeCharDevice) == 0 {
 
 		var scanner = bufio.NewScanner(os.Stdin)
@@ -124,8 +128,22 @@ func main() {
 	if callArgs.Timeout < 1 {
 		callArgs.Timeout = 5
 	}
-	certDataSet = hostSet.Process(callArgs.WarnAtDays, time.Duration(callArgs.Timeout*int(time.Second)))
-	// certDataSet = hostSet.Process(callArgs.WarnAtDays, 1)
+
+	if callArgs.CertFile != "" {
+		file, err := os.Open(callArgs.CertFile)
+		if err != nil {
+			fmt.Println(fmt.Errorf("error %v", err))
+			os.Exit(1)
+		}
+		contents, err := ioutil.ReadAll(file)
+		if err != nil {
+			fmt.Println(fmt.Errorf("error %v", err))
+			os.Exit(1)
+		}
+		certDataSet = hosts.NewHostSet().ProcessCertFile(contents, callArgs.WarnAtDays, time.Duration(callArgs.Timeout*int(time.Second)))
+	} else {
+		certDataSet = hostSet.Process(callArgs.WarnAtDays, time.Duration(callArgs.Timeout*int(time.Second)))
+	}
 
 	var bytes []byte
 	var err error
