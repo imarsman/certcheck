@@ -6,7 +6,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"regexp"
 	"runtime"
@@ -135,7 +135,10 @@ func main() {
 			fmt.Println(fmt.Errorf("error %v", err))
 			os.Exit(1)
 		}
-		contents, err := ioutil.ReadAll(file)
+		// Limit to max PEM file size. Found in Cisco document about changes
+		// to max.
+		limitReader := io.LimitReader(file, 8192)
+		contents, err := io.ReadAll(limitReader)
 		if err != nil {
 			fmt.Println(fmt.Errorf("error %v", err))
 			os.Exit(1)
