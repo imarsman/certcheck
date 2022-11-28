@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"os"
 	"regexp"
 	"runtime"
 	"sort"
@@ -203,6 +204,10 @@ func (hostSet *HostSet) ProcessCertFile(bytes []byte, warnAtDays int, timeout ti
 
 	certData := newCertData()
 	cert, err := cert.ReadCert(bytes)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
 	if err == nil {
 		certData.Host = strings.Join(cert.DNSNames, ", ")
 		daysLeft := 0
