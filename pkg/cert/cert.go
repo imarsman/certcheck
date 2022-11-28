@@ -6,12 +6,15 @@ import (
 )
 
 // pemFirstCertificate get first certificate in PEM
+// https://fale.io/blog/2017/12/21/walkthrough-a-pem-file-in-go
 func pemFirstCertificate(PEMRest []byte) *pem.Block {
 	for {
 		block, rest := pem.Decode(PEMRest)
 		if block == nil {
 			break
 		}
+		// Type is a simple extration of the word in a block after BEGIN
+		// e.g. -----BEGIN CERTIFICATE-----
 		if block.Type == `CERTIFICATE` {
 			return block
 		}
