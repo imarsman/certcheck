@@ -5,17 +5,27 @@ import (
 	"encoding/pem"
 )
 
-func ReadCert(bytes []byte) (cert *x509.Certificate, err error) {
-	roots := x509.NewCertPool()
-	ok := roots.AppendCertsFromPEM(bytes)
-	if !ok {
-		panic("failed to parse root certificate")
+// pemFirstCertificate get first certificate in PEM
+func pemFirstCertificate(PEMRest []byte) *pem.Block {
+	for {
+		block, rest := pem.Decode(PEMRest)
+		if block == nil {
+			break
+		}
+		if block.Type == `CERTIFICATE` {
+			return block
+		}
+		if len(rest) == 0 {
+			break
+		}
+		PEMRest = rest
 	}
+	return nil
+}
 
-	block, _ := pem.Decode(bytes)
-	if block == nil {
-		panic("failed to parse certificate PEM")
-	}
+// ReadCert read a PEM encoded X509 certificate file
+func ReadCert(bytes []byte) (cert *x509.Certificate, err error) {
+	block := pemFirstCertificate(bytes)
 	cert, err = x509.ParseCertificate(block.Bytes)
 	if err != nil {
 		panic("failed to parse certificate: " + err.Error())
