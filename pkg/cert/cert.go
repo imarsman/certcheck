@@ -6,9 +6,9 @@ import (
 	"errors"
 )
 
-// pemBlocks get first certificate in PEM
+// pemCertificateBlocks get first certificate in PEM
 // https://fale.io/blog/2017/12/21/walkthrough-a-pem-file-in-go
-func pemBlocks(PEMRest []byte) (blocks []*pem.Block) {
+func pemCertificateBlocks(PEMRest []byte) (blocks []*pem.Block) {
 	for {
 		block, rest := pem.Decode(PEMRest)
 		if block == nil {
@@ -29,7 +29,7 @@ func pemBlocks(PEMRest []byte) (blocks []*pem.Block) {
 
 // ReadCert read a PEM encoded X509 certificate file
 func ReadCert(input []byte) (cert *x509.Certificate, err error) {
-	blocks := pemBlocks(input)
+	blocks := pemCertificateBlocks(input)
 
 	// Bad input file
 	if len(blocks) == 0 {
