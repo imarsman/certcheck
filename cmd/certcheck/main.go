@@ -53,6 +53,7 @@ func (Args) Version() string {
 	}
 	buf.WriteString(fmt.Sprintf("OS: %11s\n", runtime.GOOS))
 	buf.WriteString(fmt.Sprintf("ARCH: %8s\n", runtime.GOARCH))
+	buf.WriteString(fmt.Sprintf("Initiate completion by running COMP_INSTALL=1 certcheck"))
 
 	return buf.String()
 }
