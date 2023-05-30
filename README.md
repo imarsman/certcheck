@@ -127,32 +127,34 @@ and will have lines with more than one domain split.
   "expirywarnings": 0,
   "certdata": [
     {
-      "expirywarning": false,
+      "host": "cisco.com",
       "hosterror": false,
       "message": "OK",
-      "host": "cisco.com",
-      "issuer": "CN=HydrantID SSL CA G3,O=HydrantID (Avalanche Cloud Corporation),C=US",
+      "expirywarning": false,
+      "issuer": "CN=HydrantID Server CA O1,OU=HydrantID Trusted Certificate Service,O=IdenTrust,C=US",
       "port": "443",
-      "daystoexpiry": 66,
+      "totaldays": 364,
+      "daystoexpiry": 225,
       "warnatdays": 30,
-      "checktime": "2021-12-31T16:04:37Z",
-      "notbefore": "2021-03-08T15:57:58Z",
-      "notafter": "2022-03-08T16:07:00Z",
-      "fetchtime": "288ms"
+      "checktime": "2023-05-29T21:07:36Z",
+      "notbefore": "2023-01-10T15:10:30Z",
+      "notafter": "2024-01-10T15:09:30Z",
+      "fetchtime": "235ms"
     },
     {
-      "expirywarning": false,
+      "host": "google.com",
       "hosterror": false,
       "message": "OK",
-      "host": "google.com",
+      "expirywarning": false,
       "issuer": "CN=GTS CA 1C3,O=Google Trust Services LLC,C=US",
       "port": "443",
-      "daystoexpiry": 51,
+      "totaldays": 83,
+      "daystoexpiry": 62,
       "warnatdays": 30,
-      "checktime": "2021-12-31T16:04:37Z",
-      "notbefore": "2021-11-29T02:22:33Z",
-      "notafter": "2022-02-21T02:22:32Z",
-      "fetchtime": "221ms"
+      "checktime": "2023-05-29T21:07:36Z",
+      "notbefore": "2023-05-08T08:20:09Z",
+      "notafter": "2023-07-31T08:20:08Z",
+      "fetchtime": "168ms"
     }
   ]
 }
