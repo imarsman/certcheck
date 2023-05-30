@@ -84,6 +84,7 @@ func (e *hostSkipError) Error() string {
 
 // CertData values for a TLS certificate
 type CertData struct {
+	// ID            int    `json:"-" yaml:"-"`
 	Host          string `json:"host" yaml:"host"`
 	HostError     bool   `json:"hosterror" yaml:"hosterror"`
 	Message       string `json:"message" yaml:"message"`
@@ -426,6 +427,10 @@ func (hostSet *HostSet) Process(warnAtDays int, timeout time.Duration) *CertData
 
 	certDataSet.finalize() // Produce summary values and sort
 
+	cd := certDataSet.CertData
+	sort.SliceStable(cd, func(i, j int) bool {
+		return cd[i].Host < cd[j].Host
+	})
 	return certDataSet
 }
 
